@@ -1,0 +1,138 @@
+{
+  "batch_id": "BATCH_20260816_PENCH_STN_104B",
+  "triage_summary": {
+    "processed_frames": 10,
+    "blank_frames": 5,
+    "fauna_frames": 5,
+    "human_vehicle_frames": 0,
+    "storage_saved_gb": 0.0001,
+    "manual_hours_saved": 0.0063
+  },
+  "dispatches": [
+    {
+      "image_id": "IMG_00001",
+      "status": "QUARANTINED_BLANK",
+      "max_confidence": 0.0,
+      "detections": [],
+      "target_quarantine_path": "data\\quarantine\\BATCH_20260816_PENCH_STN_104B\\IMG_00001.JPG"
+    },
+    {
+      "image_id": "IMG_00002",
+      "status": "FAUNA_DETECTED",
+      "max_confidence": 0.7385,
+      "detections": [
+        {
+          "class": "animal",
+          "confidence": 0.7385,
+          "bbox_normalized": [
+            0.264,
+            0.2486,
+            0.7286,
+            0.7654
+          ]
+        }
+      ],
+      "target_quarantine_path": null
+    },
+    {
+      "image_id": "IMG_00003",
+      "status": "QUARANTINED_BLANK",
+      "max_confidence": 0.0,
+      "detections": [],
+      "target_quarantine_path": "data\\quarantine\\BATCH_20260816_PENCH_STN_104B\\IMG_00003.JPG"
+    },
+    {
+      "image_id": "IMG_00004",
+      "status": "FAUNA_DETECTED",
+      "max_confidence": 0.6336,
+      "detections": [
+        {
+          "class": "animal",
+          "confidence": 0.6336,
+          "bbox_normalized": [
+            0.1954,
+            0.2228,
+            0.8109,
+            0.8044
+          ]
+        }
+      ],
+      "target_quarantine_path": null
+    },
+    {
+      "image_id": "IMG_00005",
+      "status": "QUARANTINED_BLANK",
+      "max_confidence": 0.0,
+      "detections": [],
+      "target_quarantine_path": "data\\quarantine\\BATCH_20260816_PENCH_STN_104B\\IMG_00005.JPG"
+    },
+    {
+      "image_id": "IMG_00006",
+      "status": "FAUNA_DETECTED",
+      "max_confidence": 0.8012,
+      "detections": [
+        {
+          "class": "animal",
+          "confidence": 0.8012,
+          "bbox_normalized": [
+            0.2054,
+            0.295,
+            0.7201,
+            0.8838
+          ]
+        }
+      ],
+      "target_quarantine_path": null
+    },
+    {
+      "image_id": "IMG_00007",
+      "status": "QUARANTINED_BLANK",
+      "max_confidence": 0.0,
+      "detections": [],
+      "target_quarantine_path": "data\\quarantine\\BATCH_20260816_PENCH_STN_104B\\IMG_00007.JPG"
+    },
+    {
+      "image_id": "IMG_00008",
+      "status": "FAUNA_DETECTED",
+      "max_confidence": 0.2691,
+      "detections": [
+        {
+          "class": "animal",
+          "confidence": 0.2691,
+          "bbox_normalized": [
+            0.2283,
+            0.2672,
+            0.6878,
+            0.7629
+          ]
+        }
+      ],
+      "target_quarantine_path": null
+    },
+    {
+      "image_id": "IMG_00009",
+      "status": "FAUNA_DETECTED",
+      "max_confidence": 0.7861,
+      "detections": [
+        {
+          "class": "animal",
+          "confidence": 0.7861,
+          "bbox_normalized": [
+            0.2048,
+            0.2438,
+            0.8817,
+            0.8427
+          ]
+        }
+      ],
+      "target_quarantine_path": null
+    },
+    {
+      "image_id": "IMG_00010",
+      "status": "QUARANTINED_BLANK",
+      "max_confidence": 0.0,
+      "detections": [],
+      "target_quarantine_path": "data\\quarantine\\BATCH_20260816_PENCH_STN_104B\\IMG_00010.JPG"
+    }
+  ]
+}
