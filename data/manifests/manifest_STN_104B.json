@@ -1,0 +1,127 @@
+{
+  "batch_id": "BATCH_20260816_PENCH_STN_104B",
+  "source_directory": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B",
+  "total_frames": 10,
+  "station_metadata": {
+    "station_id": "PTR_STN_104B",
+    "zone": "CORE",
+    "range_name": "Karmajhiri",
+    "latitude": 21.68502,
+    "longitude": 79.28504,
+    "elevation_m": 420.5,
+    "h3_res8": "h3_unavailable_res8",
+    "h3_res9": "h3_unavailable_res9"
+  },
+  "records": [
+    {
+      "image_id": "IMG_00001",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00001.JPG",
+      "phash": "f2092df29c2de296",
+      "md5_checksum": "84b166f80399a6e985ab550ff2bd5ff0",
+      "captured_at": "2026-02-14T02:15:30+05:30",
+      "flash_fired": false,
+      "ambient_temp_c": 12.5,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00002",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00002.JPG",
+      "phash": "e13c8ff03d1338c3",
+      "md5_checksum": "4dc2c0443a194673876652e3a84348f8",
+      "captured_at": "2026-02-14T03:22:15+05:30",
+      "flash_fired": true,
+      "ambient_temp_c": 14.0,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00003",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00003.JPG",
+      "phash": "b0121fe0ed0fe9e4",
+      "md5_checksum": "4a2151db4d368c9d3a0f21aed5960cef",
+      "captured_at": "2026-02-14T04:05:42+05:30",
+      "flash_fired": false,
+      "ambient_temp_c": 11.8,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00004",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00004.JPG",
+      "phash": "f007583f1f5ac383",
+      "md5_checksum": "cd31e5a12b3e6df1116d1cb6f19708e5",
+      "captured_at": "2026-02-14T06:30:00+05:30",
+      "flash_fired": true,
+      "ambient_temp_c": 10.2,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00005",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00005.JPG",
+      "phash": "c6c830b649b3b769",
+      "md5_checksum": "f91834e16f363c9d8fd4ead225595537",
+      "captured_at": "2026-02-14T08:45:20+05:30",
+      "flash_fired": false,
+      "ambient_temp_c": 16.5,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00006",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00006.JPG",
+      "phash": "91d14a62369e5d7c",
+      "md5_checksum": "2d7644c74dd18768122632a69a7361be",
+      "captured_at": "2026-02-14T11:10:55+05:30",
+      "flash_fired": false,
+      "ambient_temp_c": 22.3,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00007",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00007.JPG",
+      "phash": "87a778788787b258",
+      "md5_checksum": "672d767b486a2f5a50fcdba9a25f3eec",
+      "captured_at": "2026-02-14T15:30:10+05:30",
+      "flash_fired": false,
+      "ambient_temp_c": 28.1,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00008",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00008.JPG",
+      "phash": "9c89687633917b6a",
+      "md5_checksum": "a13220b98974b287666494503861a462",
+      "captured_at": "2026-02-14T19:45:00+05:30",
+      "flash_fired": true,
+      "ambient_temp_c": 18.7,
+      "exif_status": "VALID",
+      "is_burst_duplicate": false
+    },
+    {
+      "image_id": "IMG_00009",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00009.JPG",
+      "phash": "9c89687633917b6a",
+      "md5_checksum": "0f90fe71cdd6ebbf8b45e437a259b9b8",
+      "captured_at": "2026-02-14T19:45:01+05:30",
+      "flash_fired": true,
+      "ambient_temp_c": 18.7,
+      "exif_status": "VALID",
+      "is_burst_duplicate": true
+    },
+    {
+      "image_id": "IMG_00010",
+      "absolute_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00010.JPG",
+      "phash": "9c89687633917b6a",
+      "md5_checksum": "0f90fe71cdd6ebbf8b45e437a259b9b8",
+      "captured_at": "2026-02-14T19:45:01+05:30",
+      "flash_fired": true,
+      "ambient_temp_c": 18.7,
+      "exif_status": "VALID",
+      "is_burst_duplicate": true
+    }
+  ]
+}

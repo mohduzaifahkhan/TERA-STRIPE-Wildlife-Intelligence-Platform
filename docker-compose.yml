@@ -1,0 +1,79 @@
+version: '3.8'
+
+# ─── TERA-STRIPE Docker Stack ───
+# PostGIS 16-3.4 │ Redis 7 │ MinIO │ Core API Engine
+
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: pench_postgis
+    environment:
+      POSTGRES_DB: pench_wildlife_db
+      POSTGRES_USER: ranger_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pench_secure_pass_2026}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ranger_admin -d pench_wildlife_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: pench_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: pench_storage
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-pench_minio_2026}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  api_engine:
+    build: .
+    container_name: pench_core_api
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://ranger_admin:${DB_PASSWORD:-pench_secure_pass_2026}@postgis:5432/pench_wildlife_db
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      USE_POSTGIS: "true"
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  postgis_data:
+  minio_data:

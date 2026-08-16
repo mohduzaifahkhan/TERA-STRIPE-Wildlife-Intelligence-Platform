@@ -1,0 +1,1 @@
+# TERA-STRIPE tests package
