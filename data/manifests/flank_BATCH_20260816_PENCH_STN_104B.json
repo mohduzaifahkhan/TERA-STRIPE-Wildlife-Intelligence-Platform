@@ -1,0 +1,640 @@
+{
+  "batch_id": "BATCH_20260816_PENCH_STN_104B",
+  "crops_directory": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B",
+  "summary": {
+    "total_fauna_frames": 5,
+    "total_extractions": 5,
+    "high_quality_count": 1,
+    "left_flanks": 1,
+    "right_flanks": 1,
+    "ambiguous_flanks": 3,
+    "mean_quality_score": 0.6519
+  },
+  "extractions": [
+    {
+      "image_id": "IMG_00002",
+      "source_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00002.JPG",
+      "crop_path": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B\\IMG_00002_LEFT.jpg",
+      "flank_side": "LEFT",
+      "keypoints": [
+        {
+          "name": "nose",
+          "x": 0.4175,
+          "y": 0.3091,
+          "confidence": 0.716
+        },
+        {
+          "name": "left_eye",
+          "x": 0.3876,
+          "y": 0.3493,
+          "confidence": 0.6487
+        },
+        {
+          "name": "right_eye",
+          "x": 0.5076,
+          "y": 0.3253,
+          "confidence": 0.7196
+        },
+        {
+          "name": "left_ear",
+          "x": 0.3592,
+          "y": 0.2876,
+          "confidence": 0.6537
+        },
+        {
+          "name": "right_ear",
+          "x": 0.5175,
+          "y": 0.2969,
+          "confidence": 0.6012
+        },
+        {
+          "name": "left_shoulder",
+          "x": 0.3205,
+          "y": 0.4082,
+          "confidence": 0.8268
+        },
+        {
+          "name": "right_shoulder",
+          "x": 0.5402,
+          "y": 0.4202,
+          "confidence": 0.954
+        },
+        {
+          "name": "left_elbow",
+          "x": 0.3026,
+          "y": 0.5162,
+          "confidence": 0.7481
+        },
+        {
+          "name": "right_elbow",
+          "x": 0.5728,
+          "y": 0.521,
+          "confidence": 0.6803
+        },
+        {
+          "name": "left_wrist",
+          "x": 0.267,
+          "y": 0.6121,
+          "confidence": 0.7808
+        },
+        {
+          "name": "right_wrist",
+          "x": 0.5989,
+          "y": 0.5906,
+          "confidence": 0.83
+        },
+        {
+          "name": "left_hip",
+          "x": 0.3504,
+          "y": 0.5405,
+          "confidence": 0.7816
+        },
+        {
+          "name": "right_hip",
+          "x": 0.5237,
+          "y": 0.5304,
+          "confidence": 0.7199
+        },
+        {
+          "name": "left_knee",
+          "x": 0.3367,
+          "y": 0.6215,
+          "confidence": 0.7514
+        },
+        {
+          "name": "right_knee",
+          "x": 0.5442,
+          "y": 0.6218,
+          "confidence": 0.9264
+        },
+        {
+          "name": "left_ankle",
+          "x": 0.3048,
+          "y": 0.6874,
+          "confidence": 0.6306
+        },
+        {
+          "name": "right_ankle",
+          "x": 0.5751,
+          "y": 0.698,
+          "confidence": 0.86
+        },
+        {
+          "name": "tail_base",
+          "x": 0.4551,
+          "y": 0.5711,
+          "confidence": 0.8182
+        }
+      ],
+      "quality_score": 0.6805,
+      "bbox_normalized": [
+        0.1704,
+        0.2971,
+        0.7029,
+        0.7353
+      ],
+      "crop_size_px": 224,
+      "affine_warp_applied": true
+    },
+    {
+      "image_id": "IMG_00004",
+      "source_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00004.JPG",
+      "crop_path": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B\\IMG_00004_RIGHT.jpg",
+      "flank_side": "RIGHT",
+      "keypoints": [
+        {
+          "name": "nose",
+          "x": 0.4702,
+          "y": 0.2665,
+          "confidence": 0.7601
+        },
+        {
+          "name": "left_eye",
+          "x": 0.4214,
+          "y": 0.2962,
+          "confidence": 0.6428
+        },
+        {
+          "name": "right_eye",
+          "x": 0.5178,
+          "y": 0.2793,
+          "confidence": 0.8699
+        },
+        {
+          "name": "left_ear",
+          "x": 0.3999,
+          "y": 0.2502,
+          "confidence": 0.7497
+        },
+        {
+          "name": "right_ear",
+          "x": 0.5248,
+          "y": 0.2667,
+          "confidence": 0.7497
+        },
+        {
+          "name": "left_shoulder",
+          "x": 0.3738,
+          "y": 0.3462,
+          "confidence": 0.7723
+        },
+        {
+          "name": "right_shoulder",
+          "x": 0.5471,
+          "y": 0.3502,
+          "confidence": 0.8221
+        },
+        {
+          "name": "left_elbow",
+          "x": 0.3562,
+          "y": 0.484,
+          "confidence": 0.8171
+        },
+        {
+          "name": "right_elbow",
+          "x": 0.5612,
+          "y": 0.5066,
+          "confidence": 0.6886
+        },
+        {
+          "name": "left_wrist",
+          "x": 0.3199,
+          "y": 0.5787,
+          "confidence": 0.7581
+        },
+        {
+          "name": "right_wrist",
+          "x": 0.5871,
+          "y": 0.5835,
+          "confidence": 0.5432
+        },
+        {
+          "name": "left_hip",
+          "x": 0.3962,
+          "y": 0.4933,
+          "confidence": 0.7179
+        },
+        {
+          "name": "right_hip",
+          "x": 0.5276,
+          "y": 0.5231,
+          "confidence": 0.8226
+        },
+        {
+          "name": "left_knee",
+          "x": 0.3696,
+          "y": 0.6009,
+          "confidence": 0.7496
+        },
+        {
+          "name": "right_knee",
+          "x": 0.5379,
+          "y": 0.5963,
+          "confidence": 0.6627
+        },
+        {
+          "name": "left_ankle",
+          "x": 0.3421,
+          "y": 0.677,
+          "confidence": 0.9058
+        },
+        {
+          "name": "right_ankle",
+          "x": 0.5673,
+          "y": 0.6709,
+          "confidence": 0.6205
+        },
+        {
+          "name": "tail_base",
+          "x": 0.4535,
+          "y": 0.5249,
+          "confidence": 0.714
+        }
+      ],
+      "quality_score": 0.7172,
+      "bbox_normalized": [
+        0.2317,
+        0.2401,
+        0.6816,
+        0.7204
+      ],
+      "crop_size_px": 224,
+      "affine_warp_applied": true
+    },
+    {
+      "image_id": "IMG_00006",
+      "source_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00006.JPG",
+      "crop_path": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B\\IMG_00006_AMBIGUOUS.jpg",
+      "flank_side": "AMBIGUOUS",
+      "keypoints": [
+        {
+          "name": "nose",
+          "x": 0.498,
+          "y": 0.2193,
+          "confidence": 0.7788
+        },
+        {
+          "name": "left_eye",
+          "x": 0.3958,
+          "y": 0.2418,
+          "confidence": 0.7659
+        },
+        {
+          "name": "right_eye",
+          "x": 0.5348,
+          "y": 0.2472,
+          "confidence": 0.5631
+        },
+        {
+          "name": "left_ear",
+          "x": 0.3796,
+          "y": 0.1924,
+          "confidence": 0.6693
+        },
+        {
+          "name": "right_ear",
+          "x": 0.5551,
+          "y": 0.1877,
+          "confidence": 0.7202
+        },
+        {
+          "name": "left_shoulder",
+          "x": 0.3495,
+          "y": 0.3641,
+          "confidence": 1.0
+        },
+        {
+          "name": "right_shoulder",
+          "x": 0.617,
+          "y": 0.3344,
+          "confidence": 0.7789
+        },
+        {
+          "name": "left_elbow",
+          "x": 0.3272,
+          "y": 0.5428,
+          "confidence": 0.7679
+        },
+        {
+          "name": "right_elbow",
+          "x": 0.6303,
+          "y": 0.5241,
+          "confidence": 0.7234
+        },
+        {
+          "name": "left_wrist",
+          "x": 0.2928,
+          "y": 0.6805,
+          "confidence": 0.6768
+        },
+        {
+          "name": "right_wrist",
+          "x": 0.657,
+          "y": 0.6826,
+          "confidence": 0.6269
+        },
+        {
+          "name": "left_hip",
+          "x": 0.3827,
+          "y": 0.5587,
+          "confidence": 0.8002
+        },
+        {
+          "name": "right_hip",
+          "x": 0.5772,
+          "y": 0.561,
+          "confidence": 0.8278
+        },
+        {
+          "name": "left_knee",
+          "x": 0.3583,
+          "y": 0.7225,
+          "confidence": 0.7478
+        },
+        {
+          "name": "right_knee",
+          "x": 0.5824,
+          "y": 0.701,
+          "confidence": 0.8563
+        },
+        {
+          "name": "left_ankle",
+          "x": 0.3211,
+          "y": 0.8209,
+          "confidence": 0.5797
+        },
+        {
+          "name": "right_ankle",
+          "x": 0.6441,
+          "y": 0.8112,
+          "confidence": 0.6292
+        },
+        {
+          "name": "tail_base",
+          "x": 0.4704,
+          "y": 0.5684,
+          "confidence": 0.7155
+        }
+      ],
+      "quality_score": 0.6203,
+      "bbox_normalized": [
+        0.1572,
+        0.1907,
+        0.7901,
+        0.8802
+      ],
+      "crop_size_px": 224,
+      "affine_warp_applied": true
+    },
+    {
+      "image_id": "IMG_00008",
+      "source_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00008.JPG",
+      "crop_path": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B\\IMG_00008_AMBIGUOUS.jpg",
+      "flank_side": "AMBIGUOUS",
+      "keypoints": [
+        {
+          "name": "nose",
+          "x": 0.5585,
+          "y": 0.1864,
+          "confidence": 0.7469
+        },
+        {
+          "name": "left_eye",
+          "x": 0.4975,
+          "y": 0.194,
+          "confidence": 0.7764
+        },
+        {
+          "name": "right_eye",
+          "x": 0.6064,
+          "y": 0.1772,
+          "confidence": 0.6686
+        },
+        {
+          "name": "left_ear",
+          "x": 0.4694,
+          "y": 0.1869,
+          "confidence": 0.9292
+        },
+        {
+          "name": "right_ear",
+          "x": 0.6506,
+          "y": 0.1631,
+          "confidence": 0.8421
+        },
+        {
+          "name": "left_shoulder",
+          "x": 0.444,
+          "y": 0.3198,
+          "confidence": 0.9865
+        },
+        {
+          "name": "right_shoulder",
+          "x": 0.6865,
+          "y": 0.2944,
+          "confidence": 0.8084
+        },
+        {
+          "name": "left_elbow",
+          "x": 0.4182,
+          "y": 0.4456,
+          "confidence": 0.64
+        },
+        {
+          "name": "right_elbow",
+          "x": 0.7656,
+          "y": 0.4642,
+          "confidence": 0.7469
+        },
+        {
+          "name": "left_wrist",
+          "x": 0.3449,
+          "y": 0.5452,
+          "confidence": 0.6397
+        },
+        {
+          "name": "right_wrist",
+          "x": 0.7677,
+          "y": 0.5353,
+          "confidence": 0.8572
+        },
+        {
+          "name": "left_hip",
+          "x": 0.4752,
+          "y": 0.456,
+          "confidence": 0.8425
+        },
+        {
+          "name": "right_hip",
+          "x": 0.6652,
+          "y": 0.4773,
+          "confidence": 0.7448
+        },
+        {
+          "name": "left_knee",
+          "x": 0.4094,
+          "y": 0.5958,
+          "confidence": 0.8039
+        },
+        {
+          "name": "right_knee",
+          "x": 0.7045,
+          "y": 0.5921,
+          "confidence": 0.7074
+        },
+        {
+          "name": "left_ankle",
+          "x": 0.423,
+          "y": 0.6541,
+          "confidence": 0.7305
+        },
+        {
+          "name": "right_ankle",
+          "x": 0.7586,
+          "y": 0.6737,
+          "confidence": 0.7489
+        },
+        {
+          "name": "tail_base",
+          "x": 0.5776,
+          "y": 0.5099,
+          "confidence": 0.7499
+        }
+      ],
+      "quality_score": 0.6529,
+      "bbox_normalized": [
+        0.2381,
+        0.1607,
+        0.8929,
+        0.7228
+      ],
+      "crop_size_px": 224,
+      "affine_warp_applied": true
+    },
+    {
+      "image_id": "IMG_00009",
+      "source_path": "C:\\all projects\\nagpurhack\\data\\raw_camera_traps\\STN_104B\\IMG_00009.JPG",
+      "crop_path": "data\\active_working_set\\crops\\BATCH_20260816_PENCH_STN_104B\\IMG_00009_AMBIGUOUS.jpg",
+      "flank_side": "AMBIGUOUS",
+      "keypoints": [
+        {
+          "name": "nose",
+          "x": 0.4811,
+          "y": 0.2764,
+          "confidence": 0.6265
+        },
+        {
+          "name": "left_eye",
+          "x": 0.4439,
+          "y": 0.2913,
+          "confidence": 0.6183
+        },
+        {
+          "name": "right_eye",
+          "x": 0.5208,
+          "y": 0.2863,
+          "confidence": 0.8094
+        },
+        {
+          "name": "left_ear",
+          "x": 0.4017,
+          "y": 0.2499,
+          "confidence": 0.7358
+        },
+        {
+          "name": "right_ear",
+          "x": 0.5201,
+          "y": 0.2481,
+          "confidence": 0.8816
+        },
+        {
+          "name": "left_shoulder",
+          "x": 0.3907,
+          "y": 0.3876,
+          "confidence": 0.8561
+        },
+        {
+          "name": "right_shoulder",
+          "x": 0.5464,
+          "y": 0.3672,
+          "confidence": 0.7634
+        },
+        {
+          "name": "left_elbow",
+          "x": 0.3702,
+          "y": 0.5163,
+          "confidence": 0.7202
+        },
+        {
+          "name": "right_elbow",
+          "x": 0.5821,
+          "y": 0.495,
+          "confidence": 0.7057
+        },
+        {
+          "name": "left_wrist",
+          "x": 0.3448,
+          "y": 0.6401,
+          "confidence": 0.8488
+        },
+        {
+          "name": "right_wrist",
+          "x": 0.6052,
+          "y": 0.6265,
+          "confidence": 0.8087
+        },
+        {
+          "name": "left_hip",
+          "x": 0.3962,
+          "y": 0.5263,
+          "confidence": 0.8428
+        },
+        {
+          "name": "right_hip",
+          "x": 0.5312,
+          "y": 0.5513,
+          "confidence": 0.796
+        },
+        {
+          "name": "left_knee",
+          "x": 0.3935,
+          "y": 0.6447,
+          "confidence": 0.5864
+        },
+        {
+          "name": "right_knee",
+          "x": 0.5748,
+          "y": 0.6514,
+          "confidence": 0.6805
+        },
+        {
+          "name": "left_ankle",
+          "x": 0.3751,
+          "y": 0.7294,
+          "confidence": 0.72
+        },
+        {
+          "name": "right_ankle",
+          "x": 0.5801,
+          "y": 0.7138,
+          "confidence": 0.7431
+        },
+        {
+          "name": "tail_base",
+          "x": 0.4858,
+          "y": 0.5767,
+          "confidence": 0.5848
+        }
+      ],
+      "quality_score": 0.5888,
+      "bbox_normalized": [
+        0.2754,
+        0.2386,
+        0.682,
+        0.7894
+      ],
+      "crop_size_px": 224,
+      "affine_warp_applied": true
+    }
+  ]
+}
