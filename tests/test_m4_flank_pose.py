@@ -549,3 +549,70 @@ class TestFlankExtractionEngine:
 
         s = result.summary
         assert s.left_flanks + s.right_flanks + s.ambiguous_flanks == s.total_extractions
+
+
+# =====================================================================
+#  Test 8: TERA-STRIPE 6-Landmark Schema & Real Model Integration
+# =====================================================================
+
+class TestTeraStripe6Landmarks:
+    """Validate 6-landmark anatomical schema and YOLO11-Pose integration."""
+
+    def test_6_landmark_names(self) -> None:
+        from src.m4_flank_pose import TERA_STRIPE_6_KEYPOINT_NAMES
+        assert len(TERA_STRIPE_6_KEYPOINT_NAMES) == 6
+        assert "shoulder_scapula" in TERA_STRIPE_6_KEYPOINT_NAMES
+        assert "hip_pelvis_root" in TERA_STRIPE_6_KEYPOINT_NAMES
+        assert "spine_midpoint" in TERA_STRIPE_6_KEYPOINT_NAMES
+        assert "ventral_belly_contour" in TERA_STRIPE_6_KEYPOINT_NAMES
+        assert "foreleg_root" in TERA_STRIPE_6_KEYPOINT_NAMES
+        assert "hindleg_root" in TERA_STRIPE_6_KEYPOINT_NAMES
+
+    def test_6_landmark_laterality_right(self) -> None:
+        from src.m4_flank_pose import Keypoint, determine_flank_side
+        kps = [
+            Keypoint(name="shoulder_scapula", x=0.70, y=0.40, confidence=0.95),
+            Keypoint(name="hip_pelvis_root", x=0.30, y=0.40, confidence=0.95),
+            Keypoint(name="spine_midpoint", x=0.50, y=0.30, confidence=0.95),
+        ]
+        # Shoulder is to the right of hip -> Tiger facing right -> RIGHT flank visible
+        assert determine_flank_side(kps) == "RIGHT"
+
+    def test_6_landmark_laterality_left(self) -> None:
+        from src.m4_flank_pose import Keypoint, determine_flank_side
+        kps = [
+            Keypoint(name="shoulder_scapula", x=0.25, y=0.40, confidence=0.95),
+            Keypoint(name="hip_pelvis_root", x=0.75, y=0.40, confidence=0.95),
+            Keypoint(name="spine_midpoint", x=0.50, y=0.30, confidence=0.95),
+        ]
+        # Shoulder is to the left of hip -> Tiger facing left -> LEFT flank visible
+        assert determine_flank_side(kps) == "LEFT"
+
+    def test_6_landmark_affine_warp(self) -> None:
+        from PIL import Image
+        from src.m4_flank_pose import Keypoint, affine_warp_flank
+        img = Image.new("RGB", (640, 480), color=(100, 150, 200))
+        kps = [
+            Keypoint(name="shoulder_scapula", x=0.30, y=0.50, confidence=0.95),
+            Keypoint(name="hip_pelvis_root", x=0.70, y=0.50, confidence=0.95),
+        ]
+        crop, warp_applied = affine_warp_flank(img, kps, crop_size=224)
+        assert crop.size == (224, 224)
+        assert warp_applied is True
+
+    def test_real_yolo_weights_inference(self) -> None:
+        weights_path = PROJECT_ROOT / "weights" / "yolo11_pose_tiger.pt"
+        if not weights_path.exists():
+            pytest.skip("Trained weights not found")
+
+        from PIL import Image
+        from src.m4_flank_pose import YOLOPoseBackend
+
+        backend = YOLOPoseBackend(
+            weights_path=weights_path,
+            device="cuda:0" if os.environ.get("USE_CUDA", "1") == "1" else "cpu",
+        )
+        backend.load()
+        assert backend._model is not None
+        backend.unload()
+

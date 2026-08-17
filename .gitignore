@@ -28,6 +28,7 @@ __pycache__/
 env/
 venv/
 ENV/
+.pytest_cache/
 
 # Logs
 logs
@@ -50,3 +51,15 @@ Thumbs.db
 # Temporary files
 scratch/
 .tmp
+
+# Large Model Weights (>100MB)
+models/*.pt
+weights/*.pt
+
+# Local SQLite databases & WAL
+*.db
+*.db-shm
+*.db-wal
+
+# Large local pipeline data / extracted video frames
+data/real_results/

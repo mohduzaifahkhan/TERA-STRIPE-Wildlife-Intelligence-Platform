@@ -50,7 +50,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("tera_stripe.m4_flank_pose")
 
-# ── Tiger Keypoint Definition (18-point animal pose) ─────────────
+# ── Tiger Keypoint Definitions ──────────────────────────────────
+TERA_STRIPE_6_KEYPOINT_NAMES: list[str] = [
+    "shoulder_scapula",
+    "hip_pelvis_root",
+    "spine_midpoint",
+    "ventral_belly_contour",
+    "foreleg_root",
+    "hindleg_root",
+]
+
+# 18-point animal pose (legacy/mock)
 TIGER_KEYPOINT_NAMES: list[str] = [
     "nose",
     "left_eye",
@@ -201,14 +211,35 @@ def compute_quality_score(
 
 def determine_flank_side(keypoints: list[Keypoint]) -> str:
     """
-    Determine which flank is visible based on keypoint visibility.
+    Determine which flank is visible based on keypoint visibility / orientation.
 
-    Logic: Compare visibility of left-side vs right-side keypoints.
-    If the LEFT shoulder/hip/knee are more visible, the RIGHT flank
-    is facing the camera (and vice versa).
+    Logic:
+      1. If 6 TERA-STRIPE landmarks are present (shoulder_scapula, hip_pelvis_root):
+         Shoulder to the right of hip -> Tiger facing right -> RIGHT flank visible.
+         Shoulder to the left of hip -> Tiger facing left -> LEFT flank visible.
+      2. If bilateral keypoints are present (left_shoulder, right_shoulder, etc.):
+         Compare visibility of left-side vs right-side keypoints.
     """
     kp_map = {k.name: k for k in keypoints}
 
+    # 1. Check 6-landmark orientation
+    for s_name, h_name in [
+        ("shoulder_scapula", "hip_pelvis_root"),
+        ("shoulder", "hip"),
+    ]:
+        if s_name in kp_map and h_name in kp_map:
+            sh = kp_map[s_name]
+            hp = kp_map[h_name]
+            if sh.confidence > 0.15 and hp.confidence > 0.15:
+                dx = sh.x - hp.x
+                if abs(dx) < 0.05:
+                    return "AMBIGUOUS"
+                elif dx > 0:
+                    return "RIGHT"
+                else:
+                    return "LEFT"
+
+    # 2. Check bilateral keypoint visibility
     left_names = [
         "left_shoulder", "left_hip", "left_knee",
         "left_elbow", "left_wrist", "left_ankle",
@@ -271,9 +302,12 @@ def affine_warp_flank(
     shoulder = None
     hip = None
 
-    for side in ("left", "right"):
-        s_name = f"{side}_shoulder"
-        h_name = f"{side}_hip"
+    for s_name, h_name in [
+        ("shoulder_scapula", "hip_pelvis_root"),
+        ("shoulder", "hip"),
+        ("left_shoulder", "left_hip"),
+        ("right_shoulder", "right_hip"),
+    ]:
         if s_name in kp_map and h_name in kp_map:
             shoulder = kp_map[s_name]
             hip = kp_map[h_name]
@@ -463,15 +497,22 @@ class YOLOPoseBackend(PoseBackend):
                     ):
                         kp_data = result.keypoints[i]
                         xy = kp_data.xyn.cpu().numpy()
-                        conf = kp_data.conf.cpu().numpy()
-                        for j, name in enumerate(TIGER_KEYPOINT_NAMES):
-                            if j < len(xy[0]):
-                                kps.append({
-                                    "name": name,
-                                    "x": float(xy[0][j][0]),
-                                    "y": float(xy[0][j][1]),
-                                    "confidence": float(conf[0][j]),
-                                })
+                        conf = kp_data.conf.cpu().numpy() if kp_data.conf is not None else None
+
+                        if len(xy[0]) == 6:
+                            kp_names = TERA_STRIPE_6_KEYPOINT_NAMES
+                        else:
+                            kp_names = TIGER_KEYPOINT_NAMES
+
+                        for j in range(len(xy[0])):
+                            name = kp_names[j] if j < len(kp_names) else f"kpt_{j}"
+                            k_conf = float(conf[0][j]) if (conf is not None and len(conf.shape) > 1 and j < len(conf[0])) else 1.0
+                            kps.append({
+                                "name": name,
+                                "x": float(xy[0][j][0]),
+                                "y": float(xy[0][j][1]),
+                                "confidence": k_conf,
+                            })
 
                     detections.append({
                         "bbox": [round(v, 4) for v in bbox],

@@ -1,0 +1,19 @@
+# TERA-STRIPE YOLO11-Pose Dataset Configuration
+# Amur Tiger Re-identification in the Wild (ATRW) converted dataset
+
+path: C:/all projects/custom yolo11/data/tiger_pose_dataset
+train: images/train
+val: images/val
+
+# Keypoints: [num_keypoints, dim (x, y, visibility)]
+# K1 (0): Shoulder / Scapula
+# K2 (1): Hip / Pelvis root
+# K3 (2): Spine midpoint
+# K4 (3): Ventral / Belly contour
+# K5 (4): Foreleg root
+# K6 (5): Hindleg root
+kpt_shape: [6, 3]
+flip_idx: [0, 1, 2, 3, 5, 4]
+
+names:
+  0: tiger

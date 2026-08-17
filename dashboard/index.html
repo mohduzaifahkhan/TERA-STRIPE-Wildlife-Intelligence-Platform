@@ -1,694 +1,1160 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TERA-STRIPE · Tactical Wildlife Intelligence Console</title>
-<meta name="description" content="Real-time tiger monitoring dashboard for Pench Tiger Reserve. Track sightings, manage alerts, and generate NTCA census reports.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-/* ================================================================
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERA-STRIPE · Tactical Wildlife Intelligence Console</title>
+  <meta name="description"
+    content="Real-time tiger monitoring dashboard for Pench Tiger Reserve. Track sightings, manage alerts, and generate NTCA census reports.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/leaflet.css" />
+  <script src="/static/leaflet.js"></script>
+  <style>
+    /* ================================================================
    TERA-STRIPE Design System — Dark Slate & Emerald Forest
    ================================================================ */
-:root {
-  --bg-canvas: #0B0F17;
-  --bg-surface: #111827;
-  --bg-elevated: #1a2235;
-  --bg-hover: #1e293b;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --accent-emerald: #10B981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.15);
-  --accent-amber: #F59E0B;
-  --accent-amber-glow: rgba(245, 158, 11, 0.15);
-  --accent-crimson: #EF4444;
-  --accent-crimson-glow: rgba(239, 68, 68, 0.12);
-  --accent-blue: #3B82F6;
-  --accent-blue-glow: rgba(59, 130, 246, 0.15);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-dim: #475569;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-pill: 100px;
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px var(--border-subtle);
-  --shadow-elevated: 0 4px 16px rgba(0,0,0,0.4);
-  --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: var(--font-ui);
-  background: var(--bg-canvas);
-  color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Scrollbar ─────────────────────── */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 10px; }
-
-/* ── Layout ────────────────────────── */
-.app { display: flex; flex-direction: column; height: 100vh; }
-
-/* ── Top Status Ribbon ─────────────── */
-.ribbon {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; height: 52px; min-height: 52px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-  z-index: 1000;
-}
-.ribbon-left { display: flex; align-items: center; gap: 12px; }
-.brand {
-  font-weight: 600; font-size: 14px; letter-spacing: -0.3px;
-  color: var(--text-primary);
-}
-.brand span { color: var(--text-muted); font-weight: 400; }
-.status-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: var(--radius-pill);
-  background: var(--accent-emerald-glow);
-  color: var(--accent-emerald); font-size: 11px; font-weight: 500;
-}
-.status-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent-emerald);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.ribbon-center { display: flex; align-items: center; gap: 6px; }
-.kpi-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 12px; border-radius: var(--radius-pill);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  font-size: 11.5px; color: var(--text-secondary);
-  transition: var(--transition);
-  white-space: nowrap;
-}
-.kpi-chip:hover { border-color: var(--border-medium); background: var(--bg-hover); }
-.kpi-chip .val {
-  font-family: var(--font-mono); font-weight: 500;
-  color: var(--text-primary); font-size: 12px;
-}
-
-.ribbon-right { display: flex; align-items: center; gap: 8px; }
-.btn-export {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: var(--radius-pill);
-  background: var(--accent-emerald); color: #fff;
-  border: none; cursor: pointer; font-size: 11.5px; font-weight: 500;
-  font-family: var(--font-ui);
-  transition: var(--transition);
-}
-.btn-export:hover { filter: brightness(1.15); transform: translateY(-1px); }
-.btn-icon {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
-  color: var(--text-secondary); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; transition: var(--transition); position: relative;
-}
-.btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
-.notif-badge {
-  position: absolute; top: -2px; right: -2px;
-  width: 16px; height: 16px; border-radius: 50%;
-  background: var(--accent-crimson); color: #fff;
-  font-size: 9px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* ── Main Content ──────────────────── */
-.main { display: flex; flex: 1; overflow: hidden; }
-
-/* ── Map ───────────────────────────── */
-.map-container { flex: 1; position: relative; }
-#map { width: 100%; height: 100%; }
-
-.map-controls {
-  position: absolute; top: 14px; left: 14px; z-index: 800;
-  display: flex; flex-direction: column; gap: 5px;
-}
-.layer-pill {
-  display: flex; align-items: center; gap: 7px;
-  padding: 5px 12px; border-radius: var(--radius-pill);
-  background: rgba(17, 24, 39, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary); font-size: 11px;
-  cursor: pointer; transition: var(--transition);
-  user-select: none;
-}
-.layer-pill.active { color: var(--accent-emerald); border-color: rgba(16,185,129,0.3); }
-.layer-pill:hover { background: rgba(26, 34, 53, 0.95); }
-.layer-check {
-  width: 14px; height: 14px; border-radius: 3px;
-  border: 1.5px solid var(--text-dim); display: flex;
-  align-items: center; justify-content: center; font-size: 9px;
-  transition: var(--transition);
-}
-.layer-pill.active .layer-check {
-  background: var(--accent-emerald); border-color: var(--accent-emerald); color: #fff;
-}
-
-.map-legend {
-  position: absolute; bottom: 20px; left: 14px; z-index: 800;
-  padding: 10px 14px; border-radius: var(--radius-md);
-  background: rgba(17, 24, 39, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  font-size: 10.5px; color: var(--text-secondary);
-}
-.legend-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-.legend-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-}
-
-/* ── Tactical Drawer ───────────────── */
-.drawer {
-  width: 420px; min-width: 420px;
-  display: flex; flex-direction: column;
-  background: var(--bg-surface);
-  border-left: 1px solid var(--border-subtle);
-}
-
-.drawer-tabs {
-  display: flex; padding: 0;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-}
-.drawer-tab {
-  flex: 1; padding: 11px 0; text-align: center;
-  font-size: 11px; font-weight: 500; color: var(--text-muted);
-  cursor: pointer; border: none; background: none;
-  border-bottom: 2px solid transparent;
-  transition: var(--transition);
-  font-family: var(--font-ui);
-}
-.drawer-tab:hover { color: var(--text-secondary); }
-.drawer-tab.active {
-  color: var(--accent-emerald);
-  border-bottom-color: var(--accent-emerald);
-}
-
-.drawer-content {
-  flex: 1; overflow-y: auto; padding: 14px;
-}
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-/* ── Alert Cards ───────────────────── */
-.severity-group { margin-bottom: 16px; }
-.severity-label {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 2px 8px; border-radius: var(--radius-pill);
-  font-size: 10px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; margin-bottom: 8px;
-}
-.severity-label.critical { background: var(--accent-crimson-glow); color: var(--accent-crimson); }
-.severity-label.warning { background: var(--accent-amber-glow); color: var(--accent-amber); }
-.severity-label.info { background: var(--accent-blue-glow); color: var(--accent-blue); }
-
-.alert-card {
-  padding: 12px; border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 8px; transition: var(--transition);
-}
-.alert-card:hover { border-color: var(--border-medium); }
-.alert-card.acknowledged { opacity: 0.5; }
-.alert-type { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
-.alert-desc { font-size: 12.5px; color: var(--text-primary); margin: 4px 0; line-height: 1.45; }
-.alert-meta {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 8px;
-}
-.alert-time { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
-.alert-actions { display: flex; gap: 5px; }
-.btn-sm {
-  padding: 3px 10px; border-radius: var(--radius-pill);
-  font-size: 10px; font-weight: 500; border: 1px solid var(--border-subtle);
-  background: var(--bg-surface); color: var(--text-secondary);
-  cursor: pointer; transition: var(--transition);
-  font-family: var(--font-ui);
-}
-.btn-sm:hover { border-color: var(--accent-emerald); color: var(--accent-emerald); }
-.btn-sm.dispatch { border-color: var(--accent-amber); color: var(--accent-amber); }
-.btn-sm.dispatch:hover { background: var(--accent-amber-glow); }
-
-/* ── HITL Cards ────────────────────── */
-.hitl-card {
-  padding: 14px; border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 12px;
-}
-.hitl-comparator {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  margin: 10px 0;
-}
-.hitl-crop {
-  aspect-ratio: 1; border-radius: var(--radius-md);
-  background: var(--bg-canvas); overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border-subtle);
-}
-.hitl-crop img { width: 100%; height: 100%; object-fit: cover; }
-.hitl-crop .placeholder {
-  color: var(--text-dim); font-size: 11px; text-align: center; padding: 8px;
-}
-.hitl-label { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; }
-.confidence-bar {
-  height: 6px; border-radius: 3px; background: var(--bg-canvas);
-  margin: 10px 0 6px; overflow: hidden;
-}
-.confidence-fill {
-  height: 100%; border-radius: 3px;
-  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-.confidence-text {
-  display: flex; justify-content: space-between;
-  font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
-}
-.hitl-actions {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px;
-}
-.btn-hitl {
-  padding: 8px; border-radius: var(--radius-md);
-  font-size: 11px; font-weight: 500; border: none;
-  cursor: pointer; transition: var(--transition);
-  font-family: var(--font-ui);
-}
-.btn-hitl.confirm { background: var(--accent-emerald); color: #fff; }
-.btn-hitl.confirm:hover { filter: brightness(1.15); }
-.btn-hitl.new-id { background: var(--accent-blue); color: #fff; }
-.btn-hitl.new-id:hover { filter: brightness(1.15); }
-.btn-hitl.reassign { background: var(--accent-amber); color: #000; }
-.btn-hitl.reassign:hover { filter: brightness(1.15); }
-.btn-hitl.reject {
-  background: transparent; color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
-}
-.btn-hitl.reject:hover { border-color: var(--accent-crimson); color: var(--accent-crimson); }
-
-/* ── Tiger Dossier ─────────────────── */
-.search-box {
-  width: 100%; padding: 8px 12px; border-radius: var(--radius-md);
-  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
-  color: var(--text-primary); font-size: 12px;
-  font-family: var(--font-ui); outline: none;
-  transition: var(--transition);
-}
-.search-box:focus { border-color: var(--accent-emerald); }
-.search-box::placeholder { color: var(--text-dim); }
-
-.tiger-card {
-  padding: 14px; border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  margin-top: 10px; cursor: pointer;
-  transition: var(--transition);
-}
-.tiger-card:hover { border-color: var(--accent-emerald); transform: translateY(-1px); }
-.tiger-name { font-size: 14px; font-weight: 600; }
-.tiger-id { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
-.tiger-stats {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
-}
-.stat-item { }
-.stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.3px; }
-.stat-value { font-family: var(--font-mono); font-size: 13px; color: var(--text-primary); font-weight: 500; }
-
-.flank-gallery {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;
-}
-.flank-preview {
-  aspect-ratio: 4/3; border-radius: var(--radius-md);
-  background: var(--bg-canvas); border: 1px solid var(--border-subtle);
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.flank-preview .placeholder { color: var(--text-dim); font-size: 10px; }
-
-/* ── Operations Tab ────────────────── */
-.ops-section {
-  padding: 14px; border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 12px;
-}
-.ops-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
-.roi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.roi-item {
-  padding: 10px; border-radius: var(--radius-md);
-  background: var(--bg-canvas); text-align: center;
-}
-.roi-number {
-  font-family: var(--font-mono); font-size: 22px; font-weight: 600;
-  color: var(--accent-emerald);
-}
-.roi-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-.btn-ops {
-  width: 100%; padding: 10px; border-radius: var(--radius-md);
-  font-size: 12px; font-weight: 500; border: 1px solid var(--border-subtle);
-  background: var(--bg-surface); color: var(--text-secondary);
-  cursor: pointer; transition: var(--transition);
-  font-family: var(--font-ui); margin-top: 8px;
-}
-.btn-ops:hover { border-color: var(--accent-emerald); color: var(--accent-emerald); }
-
-.empty-state {
-  text-align: center; padding: 40px 20px; color: var(--text-dim);
-}
-.empty-state .icon { font-size: 32px; margin-bottom: 8px; }
-
-/* ── Leaflet Overrides ─────────────── */
-.leaflet-container { background: var(--bg-canvas) !important; }
-.leaflet-control-zoom { border: 1px solid var(--border-subtle) !important; border-radius: var(--radius-md) !important; overflow: hidden; }
-.leaflet-control-zoom a {
-  background: rgba(17,24,39,0.92) !important; color: var(--text-secondary) !important;
-  border-bottom: 1px solid var(--border-subtle) !important;
-  width: 30px !important; height: 30px !important; line-height: 30px !important;
-}
-.leaflet-control-zoom a:hover { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
-.leaflet-popup-content-wrapper {
-  background: var(--bg-surface) !important; color: var(--text-primary) !important;
-  border-radius: var(--radius-md) !important; border: 1px solid var(--border-subtle) !important;
-  box-shadow: var(--shadow-elevated) !important;
-}
-.leaflet-popup-tip { background: var(--bg-surface) !important; }
-.leaflet-popup-content { font-family: var(--font-ui) !important; font-size: 12px !important; margin: 10px 14px !important; }
-
-/* ── Animations ────────────────────── */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.fade-in { animation: fadeIn 300ms ease-out; }
-
-@keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-.slide-in { animation: slideIn 250ms ease-out; }
-</style>
-</head>
-<body>
-<div class="app">
-
-  <!-- ═══ Top Status Ribbon ═══ -->
-  <header class="ribbon">
-    <div class="ribbon-left">
-      <div class="brand">TERA-STRIPE <span>· Pench Tiger Reserve</span></div>
-      <div class="status-pill"><div class="status-dot"></div> Online</div>
-    </div>
-    <div class="ribbon-center" id="kpiChips">
-      <div class="kpi-chip">Active Stations <span class="val" id="kpiStations">104/104</span></div>
-      <div class="kpi-chip">Tracked Tigers <span class="val" id="kpiTigers">48</span></div>
-      <div class="kpi-chip">Storage Saved <span class="val" id="kpiStorage">142.6 GB</span></div>
-      <div class="kpi-chip">Labor Saved <span class="val" id="kpiLabor">45.2 hrs</span></div>
-    </div>
-    <div class="ribbon-right">
-      <button class="btn-export" id="btnExport" onclick="handleExport()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        NTCA Export
-      </button>
-      <button class="btn-icon" id="btnNotif">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <div class="notif-badge" id="notifBadge">3</div>
-      </button>
-    </div>
-  </header>
-
-  <!-- ═══ Main Content ═══ -->
-  <div class="main">
-
-    <!-- ═══ Map Viewport ═══ -->
-    <div class="map-container">
-      <div id="map"></div>
-
-      <div class="map-controls" id="mapControls">
-        <div class="layer-pill active" data-layer="boundaries" onclick="toggleLayer(this)">
-          <div class="layer-check">✓</div> Core & Buffer Boundaries
-        </div>
-        <div class="layer-pill active" data-layer="stations" onclick="toggleLayer(this)">
-          <div class="layer-check">✓</div> Camera Traps
-        </div>
-        <div class="layer-pill active" data-layer="mcp" onclick="toggleLayer(this)">
-          <div class="layer-check">✓</div> 95% MCP Home Ranges
-        </div>
-        <div class="layer-pill" data-layer="kde" onclick="toggleLayer(this)">
-          <div class="layer-check"></div> 50% KDE Core Territory
-        </div>
-        <div class="layer-pill" data-layer="h3" onclick="toggleLayer(this)">
-          <div class="layer-check"></div> H3 Hex Density Grid
-        </div>
-      </div>
-
-      <div class="map-legend">
-        <div class="legend-row"><div class="legend-dot" style="background: var(--accent-emerald)"></div> Active Station</div>
-        <div class="legend-row"><div class="legend-dot" style="background: var(--accent-crimson)"></div> Faulty / Offline</div>
-        <div class="legend-row"><div class="legend-dot" style="background: var(--accent-amber)"></div> Tiger Sighting</div>
-        <div class="legend-row"><div class="legend-dot" style="background: rgba(16,185,129,0.25); border: 1px solid var(--accent-emerald)"></div> MCP Home Range</div>
-      </div>
-    </div>
-
-    <!-- ═══ Tactical Drawer ═══ -->
-    <aside class="drawer">
-      <div class="drawer-tabs">
-        <button class="drawer-tab active" data-tab="alerts" onclick="switchTab(this)">Threat Alerts</button>
-        <button class="drawer-tab" data-tab="hitl" onclick="switchTab(this)">HITL Queue</button>
-        <button class="drawer-tab" data-tab="dossier" onclick="switchTab(this)">Tiger Dossier</button>
-        <button class="drawer-tab" data-tab="ops" onclick="switchTab(this)">Operations</button>
-      </div>
-
-      <div class="drawer-content">
-        <!-- ── Tab 1: Alerts ── -->
-        <div class="tab-panel active" id="panel-alerts"></div>
-
-        <!-- ── Tab 2: HITL Queue ── -->
-        <div class="tab-panel" id="panel-hitl"></div>
-
-        <!-- ── Tab 3: Tiger Dossier ── -->
-        <div class="tab-panel" id="panel-dossier"></div>
-
-        <!-- ── Tab 4: Operations ── -->
-        <div class="tab-panel" id="panel-ops"></div>
-      </div>
-    </aside>
-  </div>
-</div>
-
-<script>
-// ================================================================
-//  TERA-STRIPE Dashboard — Client Logic
-// ================================================================
-
-// ── Mock Data ────────────────────────────────────────────────────
-
-const MOCK_STATIONS = [
-  {id:"PTR_STN_100",lat:22.7400,lon:79.3050,zone:"CORE",active:true,captures:87},
-  {id:"PTR_STN_101",lat:22.7250,lon:79.2900,zone:"CORE",active:true,captures:112},
-  {id:"PTR_STN_102",lat:22.7100,lon:79.2800,zone:"CORE",active:true,captures:65},
-  {id:"PTR_STN_103",lat:22.7350,lon:79.3150,zone:"BUFFER",active:true,captures:43},
-  {id:"PTR_STN_104",lat:22.7500,lon:79.2700,zone:"BUFFER",active:true,captures:29},
-  {id:"PTR_STN_105",lat:22.7180,lon:79.3200,zone:"CORE",active:false,captures:18},
-  {id:"PTR_STN_106",lat:22.7050,lon:79.2950,zone:"CORRIDOR",active:true,captures:54},
-  {id:"PTR_STN_107",lat:22.6950,lon:79.3100,zone:"BUFFER",active:true,captures:37},
-  {id:"PTR_STN_108",lat:22.7450,lon:79.2850,zone:"CORE",active:true,captures:91},
-  {id:"PTR_STN_109",lat:22.7300,lon:79.2750,zone:"CORE",active:true,captures:78},
-  {id:"PTR_STN_110",lat:22.7150,lon:79.3050,zone:"CORE",active:true,captures:56},
-  {id:"PTR_STN_111",lat:22.7550,lon:79.3000,zone:"BUFFER",active:true,captures:22},
-];
-
-const MOCK_TIGERS = [
-  {id:"PTR_M_001",name:"Bajrang",sex:"MALE",status:"RESIDENT",sightings:47,range:52.3,core:14.8,
-   centroid:[79.295,22.725],mcp:[[79.27,22.70],[79.32,22.70],[79.32,22.75],[79.27,22.75],[79.27,22.70]]},
-  {id:"PTR_M_002",name:"Collarwali Jr",sex:"FEMALE",status:"RESIDENT",sightings:38,range:28.7,core:8.2,
-   centroid:[79.310,22.735],mcp:[[79.29,22.72],[79.33,22.72],[79.33,22.75],[79.29,22.75],[79.29,22.72]]},
-  {id:"PTR_M_003",name:"Raiyaji",sex:"MALE",status:"DISPERSING",sightings:22,range:67.1,core:18.5,
-   centroid:[79.280,22.710],mcp:[[79.26,22.69],[79.30,22.69],[79.30,22.73],[79.26,22.73],[79.26,22.69]]},
-  {id:"PTR_F_004",name:"Langdi",sex:"FEMALE",status:"RESIDENT",sightings:31,range:35.4,core:10.1,
-   centroid:[79.305,22.745],mcp:[[79.29,22.73],[79.32,22.73],[79.32,22.76],[79.29,22.76],[79.29,22.73]]},
-  {id:"PTR_M_005",name:"Chota Munna",sex:"MALE",status:"RESIDENT",sightings:55,range:44.9,core:12.6,
-   centroid:[79.290,22.720],mcp:[[79.27,22.70],[79.31,22.70],[79.31,22.74],[79.27,22.74],[79.27,22.70]]},
-];
-
-const MOCK_ALERTS = [
-  {id:"ALR_001",type:"VILLAGE_PROXIMITY",severity:"CRITICAL",tiger:"PTR_M_001",
-   desc:"Tiger PTR_M_001 (Bajrang) detected 0.8 km from village Turia.",dist:0.8,
-   time:"2026-08-16T06:30:00",ack:false},
-  {id:"ALR_002",type:"PROLONGED_ABSENCE",severity:"WARNING",tiger:"PTR_F_004",
-   desc:"Tiger PTR_F_004 (Langdi) not sighted for 45 days.",
-   time:"2026-08-15T14:00:00",ack:false},
-  {id:"ALR_003",type:"NOVEL_STATION",severity:"WARNING",tiger:"PTR_M_003",
-   desc:"Tiger PTR_M_003 (Raiyaji) detected at novel station PTR_STN_112.",
-   time:"2026-08-14T09:15:00",ack:false},
-  {id:"ALR_004",type:"CORE_RANGE_SHIFT",severity:"INFO",tiger:"PTR_M_005",
-   desc:"Tiger PTR_M_005 (Chota Munna) core range shifted 11.2 km.",
-   time:"2026-08-13T11:00:00",ack:true},
-];
-
-const MOCK_HITL = [
-  {id:"HITL_A1B2C3",image:"IMG_04832",flank:"LEFT",candidate:"PTR_M_001",sim:0.78,status:"PENDING"},
-  {id:"HITL_D4E5F6",image:"IMG_04901",flank:"RIGHT",candidate:"PTR_M_003",sim:0.65,status:"PENDING"},
-  {id:"HITL_G7H8I9",image:"IMG_05012",flank:"LEFT",candidate:"PTR_F_004",sim:0.71,status:"PENDING"},
-];
-
-const BOUNDARY_CORE = [[22.69,79.26],[22.69,79.33],[22.76,79.33],[22.76,79.26],[22.69,79.26]];
-const BOUNDARY_BUFFER = [[22.67,79.24],[22.67,79.35],[22.78,79.35],[22.78,79.24],[22.67,79.24]];
-
-// ── Map Init ────────────────────────────────────────────────────
-
-const map = L.map('map', {
-  zoomControl: true,
-  attributionControl: false,
-}).setView([22.725, 79.295], 13);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19,
-}).addTo(map);
-
-L.control.attribution({prefix: false, position: 'bottomright'})
-  .addAttribution('TERA-STRIPE &middot; CartoDB')
-  .addTo(map);
-
-// ── Map Layers ──────────────────────────────────────────────────
-
-const layers = {};
-
-// Core boundary
-layers.boundaries = L.layerGroup();
-L.polygon(BOUNDARY_CORE, {
-  color: '#10B981', weight: 1.5, opacity: 0.6, fillColor: '#10B981', fillOpacity: 0.04, dashArray: '6,4',
-}).bindPopup('<b>CORE ZONE</b><br>Pench Tiger Reserve').addTo(layers.boundaries);
-L.polygon(BOUNDARY_BUFFER, {
-  color: '#3B82F6', weight: 1, opacity: 0.3, fillColor: '#3B82F6', fillOpacity: 0.02, dashArray: '8,6',
-}).bindPopup('<b>BUFFER ZONE</b>').addTo(layers.boundaries);
-layers.boundaries.addTo(map);
-
-// Camera stations
-layers.stations = L.layerGroup();
-MOCK_STATIONS.forEach(s => {
-  const color = s.active ? '#10B981' : '#EF4444';
-  const marker = L.circleMarker([s.lat, s.lon], {
-    radius: 5, fillColor: color, fillOpacity: 0.9,
-    color: color, weight: 1, opacity: 0.5,
-  });
-  marker.bindPopup(
-    `<div style="font-family:var(--font-ui)">
-      <b style="font-family:var(--font-mono);font-size:11px">${s.id}</b><br>
-      <span style="color:#94A3B8">Zone:</span> ${s.zone}<br>
-      <span style="color:#94A3B8">Status:</span> ${s.active ? '<span style="color:#10B981">Active</span>' : '<span style="color:#EF4444">Offline</span>'}<br>
-      <span style="color:#94A3B8">Captures:</span> ${s.captures}<br>
-      <span style="font-family:var(--font-mono);font-size:10px;color:#64748B">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</span>
-    </div>`
-  );
-  marker.addTo(layers.stations);
-});
-layers.stations.addTo(map);
-
-// Tiger MCP ranges
-layers.mcp = L.layerGroup();
-const mcpColors = ['#10B981','#F59E0B','#3B82F6','#A855F7','#EC4899'];
-MOCK_TIGERS.forEach((t, i) => {
-  const coords = t.mcp.map(c => [c[1], c[0]]);
-  const color = mcpColors[i % mcpColors.length];
-  L.polygon(coords, {
-    color, weight: 1.5, opacity: 0.5, fillColor: color, fillOpacity: 0.08,
-  }).bindPopup(
-    `<b>${t.name}</b> (${t.id})<br>
-     MCP-95: ${t.range} km&sup2;<br>
-     Core: ${t.core} km&sup2;`
-  ).addTo(layers.mcp);
-
-  // Centroid marker
-  L.circleMarker([t.centroid[1], t.centroid[0]], {
-    radius: 4, fillColor: '#F59E0B', fillOpacity: 1,
-    color: '#F59E0B', weight: 1, opacity: 0.7,
-  }).bindPopup(`<b>${t.name}</b><br>Territory Centroid`).addTo(layers.mcp);
-});
-layers.mcp.addTo(map);
-
-// KDE (initially hidden)
-layers.kde = L.layerGroup();
-MOCK_TIGERS.forEach((t, i) => {
-  const c = t.centroid;
-  const d = 0.008;
-  L.polygon([
-    [c[1]-d, c[0]-d],[c[1]-d, c[0]+d],[c[1]+d, c[0]+d],[c[1]+d, c[0]-d],
-  ], {
-    color: mcpColors[i % mcpColors.length], weight: 1, opacity: 0.6,
-    fillColor: mcpColors[i % mcpColors.length], fillOpacity: 0.15, dashArray: '3,3',
-  }).addTo(layers.kde);
-});
-
-// H3 hex grid (initially hidden)
-layers.h3 = L.layerGroup();
-for (let lat = 22.69; lat < 22.76; lat += 0.008) {
-  for (let lon = 79.26; lon < 79.33; lon += 0.009) {
-    const intensity = Math.random();
-    if (intensity > 0.4) {
-      L.circleMarker([lat + Math.random()*0.004, lon + Math.random()*0.004], {
-        radius: 8, fillColor: '#10B981',
-        fillOpacity: intensity * 0.3, color: '#10B981',
-        weight: 0.5, opacity: 0.2,
-      }).addTo(layers.h3);
+    :root {
+      --bg-canvas: #0B0F17;
+      --bg-surface: #111827;
+      --bg-elevated: #1a2235;
+      --bg-hover: #1e293b;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --accent-emerald: #10B981;
+      --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+      --accent-amber: #F59E0B;
+      --accent-amber-glow: rgba(245, 158, 11, 0.15);
+      --accent-crimson: #EF4444;
+      --accent-crimson-glow: rgba(239, 68, 68, 0.12);
+      --accent-blue: #3B82F6;
+      --accent-blue-glow: rgba(59, 130, 246, 0.15);
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --text-dim: #475569;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --radius-pill: 100px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-subtle);
+      --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
-  }
-}
 
-// ── Layer Toggle ────────────────────────────────────────────────
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-function toggleLayer(el) {
-  const name = el.dataset.layer;
-  el.classList.toggle('active');
-  const isActive = el.classList.contains('active');
-  el.querySelector('.layer-check').textContent = isActive ? '✓' : '';
-  if (isActive) { layers[name]?.addTo(map); }
-  else { layers[name] && map.removeLayer(layers[name]); }
-}
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
 
-// ── Tab Switching ───────────────────────────────────────────────
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-canvas);
+      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
 
-function switchTab(btn) {
-  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-}
+    /* ── Scrollbar ─────────────────────── */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
 
-// ── Render Alerts ───────────────────────────────────────────────
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
 
-function renderAlerts() {
-  const panel = document.getElementById('panel-alerts');
-  const grouped = {CRITICAL: [], WARNING: [], INFO: []};
-  MOCK_ALERTS.forEach(a => {
-    (grouped[a.severity] || grouped.INFO).push(a);
-  });
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-dim);
+      border-radius: 10px;
+    }
 
-  let html = '';
-  ['CRITICAL','WARNING','INFO'].forEach(sev => {
-    if (grouped[sev].length === 0) return;
-    html += `<div class="severity-group fade-in">
+    /* ── Layout ────────────────────────── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── Top Status Ribbon ─────────────── */
+    .ribbon {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 52px;
+      min-height: 52px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 1000;
+    }
+
+    .ribbon-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .brand span {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-emerald-glow);
+      color: var(--accent-emerald);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .ribbon-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .kpi-chip:hover {
+      border-color: var(--border-medium);
+      background: var(--bg-hover);
+    }
+
+    .kpi-chip .val {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    .ribbon-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-emerald);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 500;
+      font-family: var(--font-ui);
+      transition: var(--transition);
+    }
+
+    .btn-export:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-crimson);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Main Content ──────────────────── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Map ───────────────────────────── */
+    .map-container {
+      flex: 1;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 800;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .layer-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .layer-pill.active {
+      color: var(--accent-emerald);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .layer-pill:hover {
+      background: rgba(26, 34, 53, 0.95);
+    }
+
+    .layer-check {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1.5px solid var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      transition: var(--transition);
+    }
+
+    .layer-pill.active .layer-check {
+      background: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+      color: #fff;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 20px;
+      left: 14px;
+      z-index: 800;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      font-size: 10.5px;
+      color: var(--text-secondary);
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 3px 0;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── Tactical Drawer ───────────────── */
+    .drawer {
+      width: 420px;
+      min-width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .drawer-tabs {
+      display: flex;
+      padding: 0;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+    }
+
+    .drawer-tab {
+      flex: 1;
+      padding: 11px 0;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+      font-family: var(--font-ui);
+    }
+
+    .drawer-tab:hover {
+      color: var(--text-secondary);
+    }
+
+    .drawer-tab.active {
+      color: var(--accent-emerald);
+      border-bottom-color: var(--accent-emerald);
+    }
+
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ── Alert Cards ───────────────────── */
+    .severity-group {
+      margin-bottom: 16px;
+    }
+
+    .severity-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .severity-label.critical {
+      background: var(--accent-crimson-glow);
+      color: var(--accent-crimson);
+    }
+
+    .severity-label.warning {
+      background: var(--accent-amber-glow);
+      color: var(--accent-amber);
+    }
+
+    .severity-label.info {
+      background: var(--accent-blue-glow);
+      color: var(--accent-blue);
+    }
+
+    .alert-card {
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+      transition: var(--transition);
+    }
+
+    .alert-card:hover {
+      border-color: var(--border-medium);
+    }
+
+    .alert-card.acknowledged {
+      opacity: 0.5;
+    }
+
+    .alert-type {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .alert-desc {
+      font-size: 12.5px;
+      color: var(--text-primary);
+      margin: 4px 0;
+      line-height: 1.45;
+    }
+
+    .alert-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .alert-time {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-dim);
+    }
+
+    .alert-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .btn-sm {
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-ui);
+    }
+
+    .btn-sm:hover {
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    .btn-sm.dispatch {
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+    }
+
+    .btn-sm.dispatch:hover {
+      background: var(--accent-amber-glow);
+    }
+
+    /* ── HITL Cards ────────────────────── */
+    .hitl-card {
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+    }
+
+    .hitl-comparator {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .hitl-crop {
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      background: var(--bg-canvas);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .hitl-crop img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hitl-crop .placeholder {
+      color: var(--text-dim);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .hitl-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .confidence-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-canvas);
+      margin: 10px 0 6px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .confidence-text {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .hitl-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .btn-hitl {
+      padding: 8px;
+      border-radius: var(--radius-md);
+      font-size: 11px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-ui);
+    }
+
+    .btn-hitl.confirm {
+      background: var(--accent-emerald);
+      color: #fff;
+    }
+
+    .btn-hitl.confirm:hover {
+      filter: brightness(1.15);
+    }
+
+    .btn-hitl.new-id {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .btn-hitl.new-id:hover {
+      filter: brightness(1.15);
+    }
+
+    .btn-hitl.reassign {
+      background: var(--accent-amber);
+      color: #000;
+    }
+
+    .btn-hitl.reassign:hover {
+      filter: brightness(1.15);
+    }
+
+    .btn-hitl.reject {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-hitl.reject:hover {
+      border-color: var(--accent-crimson);
+      color: var(--accent-crimson);
+    }
+
+    /* ── Tiger Dossier ─────────────────── */
+    .search-box {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box:focus {
+      border-color: var(--accent-emerald);
+    }
+
+    .search-box::placeholder {
+      color: var(--text-dim);
+    }
+
+    .tiger-card {
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      margin-top: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tiger-card:hover {
+      border-color: var(--accent-emerald);
+      transform: translateY(-1px);
+    }
+
+    .tiger-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .tiger-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tiger-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .stat-item {}
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .flank-gallery {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .flank-preview {
+      aspect-ratio: 4/3;
+      border-radius: var(--radius-md);
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .flank-preview .placeholder {
+      color: var(--text-dim);
+      font-size: 10px;
+    }
+
+    .flank-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .empty-state .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .empty-state code {
+      font-size: 10px;
+    }
+
+    /* ── Operations Tab ────────────────── */
+    .ops-section {
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+    }
+
+    .ops-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .roi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .roi-item {
+      padding: 10px;
+      border-radius: var(--radius-md);
+      background: var(--bg-canvas);
+      text-align: center;
+    }
+
+    .roi-number {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--accent-emerald);
+    }
+
+    .roi-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .btn-ops {
+      width: 100%;
+      padding: 10px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-ui);
+      margin-top: 8px;
+    }
+
+    .btn-ops:hover {
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    /* ── Leaflet Overrides ─────────────── */
+    .leaflet-container {
+      background: var(--bg-canvas) !important;
+    }
+
+    .leaflet-control-zoom {
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: var(--radius-md) !important;
+      overflow: hidden;
+    }
+
+    .leaflet-control-zoom a {
+      background: rgba(17, 24, 39, 0.92) !important;
+      color: var(--text-secondary) !important;
+      border-bottom: 1px solid var(--border-subtle) !important;
+      width: 30px !important;
+      height: 30px !important;
+      line-height: 30px !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background: var(--bg-hover) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-surface) !important;
+      color: var(--text-primary) !important;
+      border-radius: var(--radius-md) !important;
+      border: 1px solid var(--border-subtle) !important;
+      box-shadow: var(--shadow-elevated) !important;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--bg-surface) !important;
+    }
+
+    .leaflet-popup-content {
+      font-family: var(--font-ui) !important;
+      font-size: 12px !important;
+      margin: 10px 14px !important;
+    }
+
+    /* ── Animations ────────────────────── */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 300ms ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .slide-in {
+      animation: slideIn 250ms ease-out;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ═══ Top Status Ribbon ═══ -->
+    <header class="ribbon">
+      <div class="ribbon-left">
+        <div class="brand">TERA-STRIPE <span>· Pench Tiger Reserve</span></div>
+        <div class="status-pill">
+          <div class="status-dot"></div> Online
+        </div>
+      </div>
+      <div class="ribbon-center" id="kpiChips">
+        <div class="kpi-chip">Active Stations <span class="val" id="kpiStations">104/104</span></div>
+        <div class="kpi-chip">Tracked Tigers <span class="val" id="kpiTigers">48</span></div>
+        <div class="kpi-chip">Storage Saved <span class="val" id="kpiStorage">142.6 GB</span></div>
+        <div class="kpi-chip">Labor Saved <span class="val" id="kpiLabor">45.2 hrs</span></div>
+      </div>
+      <div class="ribbon-right">
+        <button class="btn-export" id="btnExport" onclick="handleExport()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          NTCA Export
+        </button>
+        <button class="btn-icon" id="btnNotif">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <div class="notif-badge" id="notifBadge">3</div>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══ Main Content ═══ -->
+    <div class="main">
+
+      <!-- ═══ Map Viewport ═══ -->
+      <div class="map-container">
+        <div id="map"></div>
+
+        <div class="map-controls" id="mapControls">
+          <div class="layer-pill active" data-layer="boundaries" onclick="toggleLayer(this)">
+            <div class="layer-check">✓</div> Core & Buffer Boundaries
+          </div>
+          <div class="layer-pill active" data-layer="stations" onclick="toggleLayer(this)">
+            <div class="layer-check">✓</div> Camera Traps
+          </div>
+          <div class="layer-pill active" data-layer="mcp" onclick="toggleLayer(this)">
+            <div class="layer-check">✓</div> 95% MCP Home Ranges
+          </div>
+          <div class="layer-pill" data-layer="kde" onclick="toggleLayer(this)">
+            <div class="layer-check"></div> 50% KDE Core Territory
+          </div>
+          <div class="layer-pill" data-layer="h3" onclick="toggleLayer(this)">
+            <div class="layer-check"></div> H3 Hex Density Grid
+          </div>
+        </div>
+
+        <div class="map-legend">
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--accent-emerald)"></div> Active Station
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--accent-crimson)"></div> Faulty / Offline
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--accent-amber)"></div> Tiger Sighting
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: rgba(16,185,129,0.25); border: 1px solid var(--accent-emerald)">
+            </div> MCP Home Range
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Tactical Drawer ═══ -->
+      <aside class="drawer">
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-tab="alerts" onclick="switchTab(this)">Threat Alerts</button>
+          <button class="drawer-tab" data-tab="hitl" onclick="switchTab(this)">HITL Queue</button>
+          <button class="drawer-tab" data-tab="dossier" onclick="switchTab(this)">Tiger Dossier</button>
+          <button class="drawer-tab" data-tab="ops" onclick="switchTab(this)">Operations</button>
+        </div>
+
+        <div class="drawer-content">
+          <!-- ── Tab 1: Alerts ── -->
+          <div class="tab-panel active" id="panel-alerts"></div>
+
+          <!-- ── Tab 2: HITL Queue ── -->
+          <div class="tab-panel" id="panel-hitl"></div>
+
+          <!-- ── Tab 3: Tiger Dossier ── -->
+          <div class="tab-panel" id="panel-dossier"></div>
+
+          <!-- ── Tab 4: Operations ── -->
+          <div class="tab-panel" id="panel-ops"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // ================================================================
+    //  TERA-STRIPE Dashboard — Client Logic
+    // ================================================================
+
+    // ── Live Data State ────────────────────────────────────────────
+    let DATA = { stations: [], tigers: [], alerts: [], hitl: [], kpi: {}, roi: {}, pipeline: {}, status: "loading" };
+
+    const BOUNDARY_CORE = [[21.67, 79.26], [21.67, 79.35], [21.73, 79.35], [21.73, 79.26], [21.67, 79.26]];
+    const BOUNDARY_BUFFER = [[21.65, 79.24], [21.65, 79.37], [21.75, 79.37], [21.75, 79.24], [21.65, 79.24]];
+
+    // ── Map Init ────────────────────────────────────────────────────
+
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: false,
+    }).setView([21.695, 79.300], 13);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    L.control.attribution({ prefix: false, position: 'bottomright' })
+      .addAttribution('TERA-STRIPE &middot; CartoDB')
+      .addTo(map);
+
+    // ── Map Layers ──────────────────────────────────────────────────
+
+    const layers = {};
+    const mcpColors = ['#10B981', '#F59E0B', '#3B82F6', '#A855F7', '#EC4899'];
+
+    // Core/Buffer boundaries
+    layers.boundaries = L.layerGroup();
+    L.polygon(BOUNDARY_CORE, {
+      color: '#10B981', weight: 1.5, opacity: 0.6, fillColor: '#10B981', fillOpacity: 0.04, dashArray: '6,4',
+    }).bindPopup('<b>CORE ZONE</b><br>Pench Tiger Reserve').addTo(layers.boundaries);
+    L.polygon(BOUNDARY_BUFFER, {
+      color: '#3B82F6', weight: 1, opacity: 0.3, fillColor: '#3B82F6', fillOpacity: 0.02, dashArray: '8,6',
+    }).bindPopup('<b>BUFFER ZONE</b>').addTo(layers.boundaries);
+    layers.boundaries.addTo(map);
+
+    layers.stations = L.layerGroup().addTo(map);
+    layers.mcp = L.layerGroup().addTo(map);
+    layers.kde = L.layerGroup();
+    layers.h3 = L.layerGroup();
+
+    function renderMapStations(stations) {
+      layers.stations.clearLayers();
+      stations.forEach(s => {
+        if (!s.lat || !s.lon) return;
+        const color = s.active !== false ? '#10B981' : '#EF4444';
+        const marker = L.circleMarker([s.lat, s.lon], {
+          radius: 5, fillColor: color, fillOpacity: 0.9,
+          color: color, weight: 1, opacity: 0.5,
+        });
+        marker.bindPopup(
+          `<div style="font-family:var(--font-ui)">
+        <b style="font-family:var(--font-mono);font-size:11px">${s.id}</b><br>
+        <span style="color:#94A3B8">Zone:</span> ${s.zone || 'UNKNOWN'}<br>
+        <span style="color:#94A3B8">Range:</span> ${s.range_name || '—'}<br>
+        <span style="color:#94A3B8">Status:</span> ${s.active !== false ? '<span style="color:#10B981">Active</span>' : '<span style="color:#EF4444">Offline</span>'}<br>
+        <span style="font-family:var(--font-mono);font-size:10px;color:#64748B">${Number(s.lat).toFixed(4)}, ${Number(s.lon).toFixed(4)}</span>
+      </div>`
+        );
+        marker.addTo(layers.stations);
+      });
+    }
+
+    function renderMapTigers(tigers) {
+      layers.mcp.clearLayers();
+      tigers.forEach((t, i) => {
+        if (!t.lat && !t.lon) return;
+        const color = mcpColors[i % mcpColors.length];
+        // Draw territory circle around centroid
+        L.circle([t.lat || 21.695, t.lon || 79.300], {
+          radius: 1500 + (t.sightings || 0) * 20,
+          color, weight: 1.5, opacity: 0.5, fillColor: color, fillOpacity: 0.08,
+        }).bindPopup(
+          `<b>${t.name}</b> (${t.id})<br>Sightings: ${t.sightings || 0}`
+        ).addTo(layers.mcp);
+
+        // Centroid marker
+        L.circleMarker([t.lat || 21.695, t.lon || 79.300], {
+          radius: 4, fillColor: '#F59E0B', fillOpacity: 1,
+          color: '#F59E0B', weight: 1, opacity: 0.7,
+        }).bindPopup(`<b>${t.name}</b><br>Territory Centroid`).addTo(layers.mcp);
+      });
+    }
+
+    // ── Layer Toggle ────────────────────────────────────────────────
+
+    function toggleLayer(el) {
+      const name = el.dataset.layer;
+      el.classList.toggle('active');
+      const isActive = el.classList.contains('active');
+      el.querySelector('.layer-check').textContent = isActive ? '✓' : '';
+      if (isActive) { layers[name]?.addTo(map); }
+      else { layers[name] && map.removeLayer(layers[name]); }
+    }
+
+    // ── Tab Switching ───────────────────────────────────────────────
+
+    function switchTab(btn) {
+      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    }
+
+    // ── KPI Update ──────────────────────────────────────────────────
+
+    function updateKPIs(kpi) {
+      const chips = document.querySelectorAll('.kpi-value');
+      if (chips.length >= 4) {
+        chips[0].textContent = `${kpi.active_stations || 0}/${kpi.total_stations || 0}`;
+        chips[1].textContent = kpi.tracked_tigers || '0';
+        chips[2].textContent = (kpi.total_sightings || 0).toLocaleString();
+        chips[3].textContent = `${kpi.storage_saved_gb || 0} GB`;
+      }
+    }
+
+    // ── Render Alerts ───────────────────────────────────────────────
+
+    function renderAlerts(alerts) {
+      const panel = document.getElementById('panel-alerts');
+      if (!alerts || alerts.length === 0) {
+        panel.innerHTML = '<div class="empty-state"><div class="icon">🛡️</div>No alerts. Run the pipeline to generate alerts from sighting data.</div>';
+        return;
+      }
+
+      const grouped = { CRITICAL: [], WARNING: [], INFO: [] };
+      alerts.forEach(a => {
+        const sev = a.severity || 'INFO';
+        (grouped[sev] || grouped.INFO).push(a);
+      });
+
+      let html = '';
+      ['CRITICAL', 'WARNING', 'INFO'].forEach(sev => {
+        if (grouped[sev].length === 0) return;
+        html += `<div class="severity-group fade-in">
       <div class="severity-label ${sev.toLowerCase()}">${sev} (${grouped[sev].length})</div>`;
-    grouped[sev].forEach(a => {
-      const timeStr = new Date(a.time).toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-      html += `<div class="alert-card ${a.ack ? 'acknowledged' : ''} slide-in">
-        <div class="alert-type">${a.type.replace(/_/g,' ')}</div>
-        <div class="alert-desc">${a.desc}</div>
+        grouped[sev].forEach(a => {
+          const timeStr = a.time ? new Date(a.time).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : '—';
+          html += `<div class="alert-card ${a.ack ? 'acknowledged' : ''} slide-in">
+        <div class="alert-type">${(a.type || 'ALERT').replace(/_/g, ' ')}</div>
+        <div class="alert-desc">${a.desc || 'Alert triggered'}</div>
         <div class="alert-meta">
           <span class="alert-time">${timeStr}</span>
           <div class="alert-actions">
@@ -697,43 +1163,43 @@ function renderAlerts() {
           </div>
         </div>
       </div>`;
-    });
-    html += '</div>';
-  });
-  panel.innerHTML = html;
-}
+        });
+        html += '</div>';
+      });
+      panel.innerHTML = html;
+    }
 
-function ackAlert(id) {
-  const alert = MOCK_ALERTS.find(a => a.id === id);
-  if (alert) { alert.ack = true; renderAlerts(); }
-}
+    function ackAlert(id) {
+      const alert = DATA.alerts.find(a => a.id === id);
+      if (alert) { alert.ack = true; renderAlerts(DATA.alerts); }
+    }
 
-// ── Render HITL Queue ───────────────────────────────────────────
+    // ── Render HITL Queue ───────────────────────────────────────────
 
-function renderHITL() {
-  const panel = document.getElementById('panel-hitl');
-  if (MOCK_HITL.length === 0) {
-    panel.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Review queue is empty</div>';
-    return;
-  }
+    function renderHITL(hitl) {
+      const panel = document.getElementById('panel-hitl');
+      if (!hitl || hitl.length === 0) {
+        panel.innerHTML = '<div class="empty-state"><div class="icon">📷</div>No items in review queue.<br><span style="font-size:11px;color:var(--text-dim)">Run the pipeline to process images and generate HITL review items.</span></div>';
+        return;
+      }
 
-  let html = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${MOCK_HITL.length} items pending review</div>`;
-  MOCK_HITL.forEach(h => {
-    const confPct = (h.sim * 100).toFixed(0);
-    const barColor = h.sim >= 0.75 ? 'var(--accent-emerald)' : h.sim >= 0.65 ? 'var(--accent-amber)' : 'var(--accent-crimson)';
-    html += `<div class="hitl-card slide-in">
+      let html = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${hitl.length} items pending review</div>`;
+      hitl.forEach(h => {
+        const confPct = (h.sim * 100).toFixed(0);
+        const barColor = h.sim >= 0.75 ? 'var(--accent-emerald)' : h.sim >= 0.65 ? 'var(--accent-amber)' : 'var(--accent-crimson)';
+        html += `<div class="hitl-card slide-in">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${h.id}</span>
         <span style="font-size:10px;color:var(--text-dim)">${h.flank} FLANK</span>
       </div>
       <div class="hitl-comparator">
         <div>
-          <div class="hitl-crop"><div class="placeholder">Query Crop<br><span style="font-family:var(--font-mono)">${h.image}</span></div></div>
-          <div class="hitl-label">Incoming</div>
+          <div class="hitl-crop">${h.queryImg ? `<img src="${h.queryImg}" alt="Query ${h.image}">` : `<div class="placeholder">Query Crop<br><span style="font-family:var(--font-mono)">${h.image}</span></div>`}</div>
+          <div class="hitl-label">Incoming · ${h.image}</div>
         </div>
         <div>
-          <div class="hitl-crop"><div class="placeholder">Gallery Match<br><span style="font-family:var(--font-mono)">${h.candidate}</span></div></div>
-          <div class="hitl-label">Top-1 Candidate</div>
+          <div class="hitl-crop">${h.galleryImg ? `<img src="${h.galleryImg}" alt="Gallery ${h.candidate}">` : `<div class="placeholder">Gallery Match<br><span style="font-family:var(--font-mono)">${h.candidate}</span></div>`}</div>
+          <div class="hitl-label">Top-1 · ${h.candidate}</div>
         </div>
       </div>
       <div class="confidence-bar"><div class="confidence-fill" style="width:${confPct}%;background:${barColor}"></div></div>
@@ -745,86 +1211,115 @@ function renderHITL() {
         <button class="btn-hitl reject" onclick="resolveHITL('${h.id}','REJECT')">Reject</button>
       </div>
     </div>`;
-  });
-  panel.innerHTML = html;
-}
+      });
+      panel.innerHTML = html;
+    }
 
-function resolveHITL(id, action) {
-  const idx = MOCK_HITL.findIndex(h => h.id === id);
-  if (idx >= 0) { MOCK_HITL.splice(idx, 1); renderHITL(); }
-}
+    function resolveHITL(id, action) {
+      const idx = DATA.hitl.findIndex(h => h.id === id);
+      if (idx >= 0) { DATA.hitl.splice(idx, 1); renderHITL(DATA.hitl); }
+    }
 
-// ── Render Tiger Dossier ────────────────────────────────────────
+    // ── Render Tiger Dossier ────────────────────────────────────────
 
-function renderDossier() {
-  const panel = document.getElementById('panel-dossier');
-  let html = '<input type="text" class="search-box" placeholder="Search tigers... (e.g. Bajrang, PTR_M_001)" oninput="filterTigers(this.value)">';
-  html += '<div id="tigerList">';
-  MOCK_TIGERS.forEach(t => {
-    html += renderTigerCard(t);
-  });
-  html += '</div>';
-  panel.innerHTML = html;
-}
+    function renderDossier(tigers) {
+      const panel = document.getElementById('panel-dossier');
+      if (!tigers || tigers.length === 0) {
+        panel.innerHTML = '<div class="empty-state"><div class="icon">🐯</div>No tigers detected yet.<br><span style="font-size:11px;color:var(--text-dim)">Run: <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">python scripts/run_real_pipeline.py --source "C:\\your_photos"</code></span></div>';
+        return;
+      }
 
-function renderTigerCard(t) {
-  const statusColor = t.status === 'RESIDENT' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
-  return `<div class="tiger-card slide-in" onclick="focusTiger(${t.centroid[1]},${t.centroid[0]},'${t.name}')">
+      let html = '<input type="text" class="search-box" placeholder="Search tigers... (e.g. Tiger_001, PTR_T_001)" oninput="filterTigers(this.value)">';
+      html += '<div id="tigerList">';
+      tigers.forEach(t => {
+        html += renderTigerCard(t);
+      });
+      html += '</div>';
+      panel.innerHTML = html;
+    }
+
+    function renderTigerCard(t) {
+      const statusColor = t.status === 'RESIDENT' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+      return `<div class="tiger-card slide-in">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
         <div class="tiger-name">${t.name}</div>
-        <div class="tiger-id">${t.id} · ${t.sex}</div>
+        <div class="tiger-id">${t.id} · ${t.sex || 'UNKNOWN'}</div>
       </div>
-      <div style="font-size:10px;color:${statusColor};font-weight:500">${t.status}</div>
+      <div style="font-size:10px;color:${statusColor};font-weight:500">${t.status || 'DETECTED'}</div>
     </div>
     <div class="tiger-stats">
-      <div class="stat-item"><div class="stat-label">Sightings</div><div class="stat-value">${t.sightings}</div></div>
-      <div class="stat-item"><div class="stat-label">MCP-95</div><div class="stat-value">${t.range} km²</div></div>
-      <div class="stat-item"><div class="stat-label">Core KDE</div><div class="stat-value">${t.core} km²</div></div>
-      <div class="stat-item"><div class="stat-label">Stations</div><div class="stat-value">${Math.floor(t.sightings/5)}</div></div>
+      <div class="stat-item"><div class="stat-label">Sightings</div><div class="stat-value">${t.sightings || 0}</div></div>
+      <div class="stat-item"><div class="stat-label">Stations</div><div class="stat-value">${t.stations || 0}</div></div>
+      <div class="stat-item"><div class="stat-label">First Seen</div><div class="stat-value">${t.first_detected ? new Date(t.first_detected).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div></div>
+      <div class="stat-item"><div class="stat-label">Last Seen</div><div class="stat-value">${t.last_detected ? new Date(t.last_detected).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div></div>
     </div>
     <div class="flank-gallery">
-      <div class="flank-preview"><div class="placeholder">LEFT FLANK</div></div>
-      <div class="flank-preview"><div class="placeholder">RIGHT FLANK</div></div>
+      <div class="flank-preview">${t.leftFlank ? `<img src="${t.leftFlank}" alt="Left flank ${t.name}">` : '<div class="placeholder">LEFT FLANK</div>'}</div>
+      <div class="flank-preview">${t.rightFlank ? `<img src="${t.rightFlank}" alt="Right flank ${t.name}">` : '<div class="placeholder">RIGHT FLANK</div>'}</div>
     </div>
   </div>`;
-}
+    }
 
-function filterTigers(q) {
-  const list = document.getElementById('tigerList');
-  const filtered = MOCK_TIGERS.filter(t =>
-    t.name.toLowerCase().includes(q.toLowerCase()) ||
-    t.id.toLowerCase().includes(q.toLowerCase())
-  );
-  list.innerHTML = filtered.map(renderTigerCard).join('');
-}
+    function filterTigers(q) {
+      const list = document.getElementById('tigerList');
+      if (!list) return;
+      const filtered = DATA.tigers.filter(t =>
+        t.name.toLowerCase().includes(q.toLowerCase()) ||
+        t.id.toLowerCase().includes(q.toLowerCase())
+      );
+      list.innerHTML = filtered.map(renderTigerCard).join('');
+    }
 
-function focusTiger(lat, lon, name) {
-  map.flyTo([lat, lon], 14, {duration: 0.8});
-}
+    function focusTiger(lat, lon, name) {
+      map.flyTo([lat, lon], 14, { duration: 0.8 });
+    }
 
-// ── Render Operations ───────────────────────────────────────────
+    // ── Render Operations ───────────────────────────────────────────
 
-function renderOps() {
-  const panel = document.getElementById('panel-ops');
-  panel.innerHTML = `
+    function renderOps(roi, pipeline) {
+      const panel = document.getElementById('panel-ops');
+      const r = roi || {};
+      const p = pipeline || {};
+      panel.innerHTML = `
+    <div class="ops-section fade-in">
+      <div class="ops-title">Pipeline Status</div>
+      <div class="roi-grid">
+        <div class="roi-item">
+          <div class="roi-number">${p.total_processed || 0}</div>
+          <div class="roi-label">Images Processed</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-number" style="color:var(--accent-emerald)">${p.fauna_detected || 0}</div>
+          <div class="roi-label">Animals Detected</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-number">${p.crops_extracted || 0}</div>
+          <div class="roi-label">Crops Extracted</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-number" style="color:var(--accent-blue)">${p.embeddings_computed || 0}</div>
+          <div class="roi-label">Embeddings</div>
+        </div>
+      </div>
+    </div>
     <div class="ops-section fade-in">
       <div class="ops-title">Storage & Labor ROI</div>
       <div class="roi-grid">
         <div class="roi-item">
-          <div class="roi-number">142.6</div>
+          <div class="roi-number">${r.storage_saved_gb || 0}</div>
           <div class="roi-label">GB Storage Saved</div>
         </div>
         <div class="roi-item">
-          <div class="roi-number">45.2</div>
+          <div class="roi-number">${r.labor_saved_hours || 0}</div>
           <div class="roi-label">Hours Labor Saved</div>
         </div>
         <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-amber)">3,842</div>
+          <div class="roi-number" style="color:var(--accent-amber)">${(r.blanks_quarantined || 0).toLocaleString()}</div>
           <div class="roi-label">Blanks Quarantined</div>
         </div>
         <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-blue)">73%</div>
+          <div class="roi-number" style="color:var(--accent-blue)">${r.auto_match_rate || 0}%</div>
           <div class="roi-label">Auto-Match Rate</div>
         </div>
       </div>
@@ -850,27 +1345,59 @@ function renderOps() {
       </button>
     </div>
   `;
-}
+    }
 
-// ── Export Handler ───────────────────────────────────────────────
+    // ── Export Handler ───────────────────────────────────────────────
 
-function handleExport() {
-  const btn = document.getElementById('btnExport');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '✓ Exported';
-  btn.style.background = 'var(--accent-amber)';
-  setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
-}
+    function handleExport() {
+      const btn = document.getElementById('btnExport');
+      if (!btn) return;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Exported';
+      btn.style.background = 'var(--accent-amber)';
+      setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+    }
 
-// ── Initialize ──────────────────────────────────────────────────
+    // ── Fetch Live Data ─────────────────────────────────────────────
 
-renderAlerts();
-renderHITL();
-renderDossier();
-renderOps();
+    async function fetchDashboardData() {
+      try {
+        const res = await fetch('/api/feed');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        DATA = await res.json();
 
-// Update notification badge
-document.getElementById('notifBadge').textContent = MOCK_ALERTS.filter(a => !a.ack).length;
-</script>
+        // Update all views
+        updateKPIs(DATA.kpi || {});
+        renderMapStations(DATA.stations || []);
+        renderMapTigers(DATA.tigers || []);
+        renderAlerts(DATA.alerts || []);
+        renderHITL(DATA.hitl || []);
+        renderDossier(DATA.tigers || []);
+        renderOps(DATA.roi || {}, DATA.pipeline || {});
+
+        // Notification badge
+        const badge = document.getElementById('notifBadge');
+        if (badge) {
+          badge.textContent = (DATA.alerts || []).filter(a => !a.ack).length;
+        }
+
+        // Status indicator
+        if (DATA.status === 'no_data') {
+          console.log('TERA-STRIPE: No pipeline data yet. Run: python scripts/run_real_pipeline.py --source "path/to/photos"');
+        }
+
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+      }
+    }
+
+    // ── Initialize ──────────────────────────────────────────────────
+
+    fetchDashboardData();
+
+    // Auto-refresh every 30 seconds
+    setInterval(fetchDashboardData, 30000);
+  </script>
 </body>
+
 </html>
