@@ -63,3 +63,5 @@ weights/*.pt
 
 # Large local pipeline data / extracted video frames
 data/real_results/
+data/pench_camera_traps/
+data/quarantine/

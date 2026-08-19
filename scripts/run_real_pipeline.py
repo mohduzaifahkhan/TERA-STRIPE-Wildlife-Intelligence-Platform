@@ -389,37 +389,76 @@ def _ingest_to_dashboard(triage_results, crop_results, embedding_results):
 
     try:
         from src.m7_db_manager import DatabaseManager
-        from datetime import datetime, timezone
+        from src.m1_ingestion import PENCH_STATION_REGISTRY
+        from datetime import datetime, timezone, timedelta
+        import re
 
         db_path = PROJECT_ROOT / "tera_stripe.db"
         db = DatabaseManager(db_url=f"sqlite:///{db_path}")
 
-        tigers_created = 0
+        # Build station lookup from Pench registry
+        station_lookup = {}
+        for key, info in PENCH_STATION_REGISTRY.items():
+            sid = info["station_id"]
+            station_lookup[key] = info
+            station_lookup[sid] = info
+
+        tigers_created = set()
         sightings_logged = 0
 
-        # Create tiger profiles and log sightings from crop results
+        # Map flank_side to valid DB orientation
+        orientation_map = {
+            "LEFT": "LEFT_FLANK",
+            "RIGHT": "RIGHT_FLANK",
+            "AMBIGUOUS": "AMBIGUOUS",
+        }
+
+        # Extract real tiger_id and station from prepared dataset filenames
+        # Format: PTR_T_001_STN_101_01_003696.jpg
+        tiger_pattern = re.compile(r"(PTR_T_\d{3})")
+        station_pattern = re.compile(r"(STN_\d{3,4}B?)")
+
+        base_time = datetime(2026, 8, 1, 6, 30, 0, tzinfo=timezone.utc)
+
         for i, crop in enumerate(crop_results):
-            tiger_id = f"PTR_T_{i + 1:03d}"
-            name = f"Tiger_{i + 1:03d}"
+            img_name = crop.get("image_name", "")
             flank = crop.get("flank_side", "LEFT")
             confidence = crop.get("confidence", 0.0)
             img_path = crop.get("image_path", "")
 
-            # Create/update tiger profile
-            db.create_or_update_tiger(
-                tiger_id=tiger_id,
-                common_name=name,
-                sex="UNKNOWN",
-                status="RESIDENT",
-            )
-            tigers_created += 1
+            # Extract tiger ID from filename
+            tiger_match = tiger_pattern.search(img_name)
+            tiger_id = tiger_match.group(1) if tiger_match else f"PTR_T_{i + 1:03d}"
 
-            # Log sighting
+            # Extract station from filename or image path
+            station_match = station_pattern.search(img_name) or station_pattern.search(img_path)
+            stn_key = station_match.group(1) if station_match else "STN_101"
+            stn_info = station_lookup.get(stn_key, station_lookup.get(f"PTR_{stn_key}", {}))
+            station_id = stn_info.get("station_id", f"PTR_{stn_key}")
+
+            # Create/update tiger profile (only once per tiger)
+            if tiger_id not in tigers_created:
+                idx = int(tiger_id.split("_")[-1])
+                db.create_or_update_tiger(
+                    tiger_id=tiger_id,
+                    common_name=f"Tiger_{idx:03d}",
+                    sex="UNKNOWN",
+                    status="RESIDENT",
+                )
+                tigers_created.add(tiger_id)
+
+            # Realistic chronological timestamp
+            capture_time = base_time + timedelta(days=i * 2, hours=(i * 3) % 12, minutes=(i * 17) % 60)
+
+            # Map flank correctly
+            flank_orientation = orientation_map.get(flank, "AMBIGUOUS")
+
+            # Log sighting with real station
             db.log_sighting(
                 tiger_id=tiger_id,
-                station_id="PTR_STN_101",
-                captured_at=datetime.now(timezone.utc),
-                flank_orientation=f"{flank}_FLANK",
+                station_id=station_id,
+                captured_at=capture_time,
+                flank_orientation=flank_orientation,
                 reid_confidence=confidence,
                 verification_status="AUTO_COMMITTED",
                 raw_image_path=img_path,
@@ -430,7 +469,6 @@ def _ingest_to_dashboard(triage_results, crop_results, embedding_results):
         # Register stations from the Pench registry
         stations_registered = 0
         try:
-            from src.m1_ingestion import PENCH_STATION_REGISTRY
             for key, info in PENCH_STATION_REGISTRY.items():
                 manifest = {
                     "station": {
@@ -451,13 +489,26 @@ def _ingest_to_dashboard(triage_results, crop_results, embedding_results):
         try:
             from src.m9_alerts import AlertEngine
             engine = AlertEngine()
+            seen_tigers = set()
             for crop in crop_results:
-                tiger_id = f"PTR_T_{crop_results.index(crop) + 1:03d}"
+                img_name = crop.get("image_name", "")
+                tiger_match = tiger_pattern.search(img_name)
+                tiger_id = tiger_match.group(1) if tiger_match else "PTR_T_001"
+
+                # Only one alert check per tiger to avoid spam
+                if tiger_id in seen_tigers:
+                    continue
+                seen_tigers.add(tiger_id)
+
+                station_match = station_pattern.search(img_name) or station_pattern.search(crop.get("image_path", ""))
+                stn_key = station_match.group(1) if station_match else "STN_101"
+                stn_info = station_lookup.get(stn_key, station_lookup.get(f"PTR_{stn_key}", {}))
+
                 sighting = {
                     "tiger_id": tiger_id,
-                    "station_id": "PTR_STN_101",
-                    "latitude": 21.6780,
-                    "longitude": 79.2920,
+                    "station_id": stn_info.get("station_id", f"PTR_{stn_key}"),
+                    "latitude": stn_info.get("latitude", 21.6780),
+                    "longitude": stn_info.get("longitude", 79.2920),
                     "captured_at": datetime.now(timezone.utc).isoformat(),
                     "confidence": crop.get("confidence", 0.0),
                 }
@@ -467,7 +518,7 @@ def _ingest_to_dashboard(triage_results, crop_results, embedding_results):
         except Exception:
             pass
 
-        print(f"  Tigers created:     {tigers_created}")
+        print(f"  Tigers created:     {len(tigers_created)}")
         print(f"  Sightings logged:   {sightings_logged}")
         print(f"  Stations registered: {stations_registered}")
         print(f"  Alerts generated:   {alerts_generated}")
@@ -478,6 +529,7 @@ def _ingest_to_dashboard(triage_results, crop_results, embedding_results):
     except Exception as e:
         print(f"  [WARN] Database ingest skipped: {e}")
         print("  Dashboard will use whatever data is available.\n")
+
 
 
 def print_summary(triage, crops, embeddings):

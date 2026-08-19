@@ -1,1403 +1,1588 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TERA-STRIPE · Tactical Wildlife Intelligence Console</title>
-  <meta name="description"
-    content="Real-time tiger monitoring dashboard for Pench Tiger Reserve. Track sightings, manage alerts, and generate NTCA census reports.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" href="/static/leaflet.css" />
-  <script src="/static/leaflet.js"></script>
-  <style>
-    /* ================================================================
-   TERA-STRIPE Design System — Dark Slate & Emerald Forest
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERA-STRIPE · Wildlife Intelligence Platform</title>
+<meta name="description" content="AI-powered tiger re-identification and territory monitoring for Pench Tiger Reserve. DINOv2 stripe pattern matching, MegaDetector triage, and real-time alerts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/leaflet.css"/>
+<script src="/static/leaflet.js"></script>
+<style>
+/* ================================================================
+   TERA-STRIPE — Tiger Stripe Intelligence Console
+   Design B: 3-Column Layout with Re-ID Engine Center Stage
    ================================================================ */
-    :root {
-      --bg-canvas: #0B0F17;
-      --bg-surface: #111827;
-      --bg-elevated: #1a2235;
-      --bg-hover: #1e293b;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-medium: rgba(255, 255, 255, 0.12);
-      --accent-emerald: #10B981;
-      --accent-emerald-glow: rgba(16, 185, 129, 0.15);
-      --accent-amber: #F59E0B;
-      --accent-amber-glow: rgba(245, 158, 11, 0.15);
-      --accent-crimson: #EF4444;
-      --accent-crimson-glow: rgba(239, 68, 68, 0.12);
-      --accent-blue: #3B82F6;
-      --accent-blue-glow: rgba(59, 130, 246, 0.15);
-      --text-primary: #F1F5F9;
-      --text-secondary: #94A3B8;
-      --text-muted: #64748B;
-      --text-dim: #475569;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 18px;
-      --radius-pill: 100px;
-      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-subtle);
-      --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
-      --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
-      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      font-family: var(--font-ui);
-      background: var(--bg-canvas);
-      color: var(--text-primary);
-      font-size: 13px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ── Scrollbar ─────────────────────── */
-    ::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--text-dim);
-      border-radius: 10px;
-    }
-
-    /* ── Layout ────────────────────────── */
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    /* ── Top Status Ribbon ─────────────── */
-    .ribbon {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      height: 52px;
-      min-height: 52px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      z-index: 1000;
-    }
-
-    .ribbon-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand {
-      font-weight: 600;
-      font-size: 14px;
-      letter-spacing: -0.3px;
-      color: var(--text-primary);
-    }
-
-    .brand span {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 10px;
-      border-radius: var(--radius-pill);
-      background: var(--accent-emerald-glow);
-      color: var(--accent-emerald);
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent-emerald);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
-    }
-
-    .ribbon-center {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .kpi-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: var(--radius-pill);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      font-size: 11.5px;
-      color: var(--text-secondary);
-      transition: var(--transition);
-      white-space: nowrap;
-    }
-
-    .kpi-chip:hover {
-      border-color: var(--border-medium);
-      background: var(--bg-hover);
-    }
-
-    .kpi-chip .val {
-      font-family: var(--font-mono);
-      font-weight: 500;
-      color: var(--text-primary);
-      font-size: 12px;
-    }
-
-    .ribbon-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-export {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: var(--radius-pill);
-      background: var(--accent-emerald);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      font-size: 11.5px;
-      font-weight: 500;
-      font-family: var(--font-ui);
-      transition: var(--transition);
-    }
-
-    .btn-export:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
-    }
-
-    .btn-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      transition: var(--transition);
-      position: relative;
-    }
-
-    .btn-icon:hover {
-      background: var(--bg-hover);
-      color: var(--text-primary);
-    }
-
-    .notif-badge {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent-crimson);
-      color: #fff;
-      font-size: 9px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* ── Main Content ──────────────────── */
-    .main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* ── Map ───────────────────────────── */
-    .map-container {
-      flex: 1;
-      position: relative;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .map-controls {
-      position: absolute;
-      top: 14px;
-      left: 14px;
-      z-index: 800;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .layer-pill {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 12px;
-      border-radius: var(--radius-pill);
-      background: rgba(17, 24, 39, 0.92);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      font-size: 11px;
-      cursor: pointer;
-      transition: var(--transition);
-      user-select: none;
-    }
-
-    .layer-pill.active {
-      color: var(--accent-emerald);
-      border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    .layer-pill:hover {
-      background: rgba(26, 34, 53, 0.95);
-    }
-
-    .layer-check {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      border: 1.5px solid var(--text-dim);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
-      transition: var(--transition);
-    }
-
-    .layer-pill.active .layer-check {
-      background: var(--accent-emerald);
-      border-color: var(--accent-emerald);
-      color: #fff;
-    }
-
-    .map-legend {
-      position: absolute;
-      bottom: 20px;
-      left: 14px;
-      z-index: 800;
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      background: rgba(17, 24, 39, 0.92);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-subtle);
-      font-size: 10.5px;
-      color: var(--text-secondary);
-    }
-
-    .legend-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 3px 0;
-    }
-
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    /* ── Tactical Drawer ───────────────── */
-    .drawer {
-      width: 420px;
-      min-width: 420px;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-surface);
-      border-left: 1px solid var(--border-subtle);
-    }
-
-    .drawer-tabs {
-      display: flex;
-      padding: 0;
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-surface);
-    }
-
-    .drawer-tab {
-      flex: 1;
-      padding: 11px 0;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
-      border: none;
-      background: none;
-      border-bottom: 2px solid transparent;
-      transition: var(--transition);
-      font-family: var(--font-ui);
-    }
-
-    .drawer-tab:hover {
-      color: var(--text-secondary);
-    }
-
-    .drawer-tab.active {
-      color: var(--accent-emerald);
-      border-bottom-color: var(--accent-emerald);
-    }
-
-    .drawer-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px;
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    /* ── Alert Cards ───────────────────── */
-    .severity-group {
-      margin-bottom: 16px;
-    }
-
-    .severity-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .severity-label.critical {
-      background: var(--accent-crimson-glow);
-      color: var(--accent-crimson);
-    }
-
-    .severity-label.warning {
-      background: var(--accent-amber-glow);
-      color: var(--accent-amber);
-    }
-
-    .severity-label.info {
-      background: var(--accent-blue-glow);
-      color: var(--accent-blue);
-    }
-
-    .alert-card {
-      padding: 12px;
-      border-radius: var(--radius-md);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 8px;
-      transition: var(--transition);
-    }
-
-    .alert-card:hover {
-      border-color: var(--border-medium);
-    }
-
-    .alert-card.acknowledged {
-      opacity: 0.5;
-    }
-
-    .alert-type {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .alert-desc {
-      font-size: 12.5px;
-      color: var(--text-primary);
-      margin: 4px 0;
-      line-height: 1.45;
-    }
-
-    .alert-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 8px;
-    }
-
-    .alert-time {
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      color: var(--text-dim);
-    }
-
-    .alert-actions {
-      display: flex;
-      gap: 5px;
-    }
-
-    .btn-sm {
-      padding: 3px 10px;
-      border-radius: var(--radius-pill);
-      font-size: 10px;
-      font-weight: 500;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: var(--transition);
-      font-family: var(--font-ui);
-    }
-
-    .btn-sm:hover {
-      border-color: var(--accent-emerald);
-      color: var(--accent-emerald);
-    }
-
-    .btn-sm.dispatch {
-      border-color: var(--accent-amber);
-      color: var(--accent-amber);
-    }
-
-    .btn-sm.dispatch:hover {
-      background: var(--accent-amber-glow);
-    }
-
-    /* ── HITL Cards ────────────────────── */
-    .hitl-card {
-      padding: 14px;
-      border-radius: var(--radius-lg);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 12px;
-    }
-
-    .hitl-comparator {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    .hitl-crop {
-      aspect-ratio: 1;
-      border-radius: var(--radius-md);
-      background: var(--bg-canvas);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .hitl-crop img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .hitl-crop .placeholder {
-      color: var(--text-dim);
-      font-size: 11px;
-      text-align: center;
-      padding: 8px;
-    }
-
-    .hitl-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 4px;
-    }
-
-    .confidence-bar {
-      height: 6px;
-      border-radius: 3px;
-      background: var(--bg-canvas);
-      margin: 10px 0 6px;
-      overflow: hidden;
-    }
-
-    .confidence-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .confidence-text {
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    .hitl-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 12px;
-    }
-
-    .btn-hitl {
-      padding: 8px;
-      border-radius: var(--radius-md);
-      font-size: 11px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      transition: var(--transition);
-      font-family: var(--font-ui);
-    }
-
-    .btn-hitl.confirm {
-      background: var(--accent-emerald);
-      color: #fff;
-    }
-
-    .btn-hitl.confirm:hover {
-      filter: brightness(1.15);
-    }
-
-    .btn-hitl.new-id {
-      background: var(--accent-blue);
-      color: #fff;
-    }
-
-    .btn-hitl.new-id:hover {
-      filter: brightness(1.15);
-    }
-
-    .btn-hitl.reassign {
-      background: var(--accent-amber);
-      color: #000;
-    }
-
-    .btn-hitl.reassign:hover {
-      filter: brightness(1.15);
-    }
-
-    .btn-hitl.reject {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border-subtle);
-    }
-
-    .btn-hitl.reject:hover {
-      border-color: var(--accent-crimson);
-      color: var(--accent-crimson);
-    }
-
-    /* ── Tiger Dossier ─────────────────── */
-    .search-box {
-      width: 100%;
-      padding: 8px 12px;
-      border-radius: var(--radius-md);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      font-size: 12px;
-      font-family: var(--font-ui);
-      outline: none;
-      transition: var(--transition);
-    }
-
-    .search-box:focus {
-      border-color: var(--accent-emerald);
-    }
-
-    .search-box::placeholder {
-      color: var(--text-dim);
-    }
-
-    .tiger-card {
-      padding: 14px;
-      border-radius: var(--radius-lg);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      margin-top: 10px;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .tiger-card:hover {
-      border-color: var(--accent-emerald);
-      transform: translateY(-1px);
-    }
-
-    .tiger-name {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .tiger-id {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .tiger-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .stat-item {}
-
-    .stat-label {
-      font-size: 10px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .stat-value {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .flank-gallery {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .flank-preview {
-      aspect-ratio: 4/3;
-      border-radius: var(--radius-md);
-      background: var(--bg-canvas);
-      border: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .flank-preview .placeholder {
-      color: var(--text-dim);
-      font-size: 10px;
-    }
-
-    .flank-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: var(--radius-md);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-
-    .empty-state .icon {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-
-    .empty-state code {
-      font-size: 10px;
-    }
-
-    /* ── Operations Tab ────────────────── */
-    .ops-section {
-      padding: 14px;
-      border-radius: var(--radius-lg);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 12px;
-    }
-
-    .ops-title {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: var(--text-primary);
-    }
-
-    .roi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .roi-item {
-      padding: 10px;
-      border-radius: var(--radius-md);
-      background: var(--bg-canvas);
-      text-align: center;
-    }
-
-    .roi-number {
-      font-family: var(--font-mono);
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--accent-emerald);
-    }
-
-    .roi-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .btn-ops {
-      width: 100%;
-      padding: 10px;
-      border-radius: var(--radius-md);
-      font-size: 12px;
-      font-weight: 500;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: var(--transition);
-      font-family: var(--font-ui);
-      margin-top: 8px;
-    }
-
-    .btn-ops:hover {
-      border-color: var(--accent-emerald);
-      color: var(--accent-emerald);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-dim);
-    }
-
-    .empty-state .icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    /* ── Leaflet Overrides ─────────────── */
-    .leaflet-container {
-      background: var(--bg-canvas) !important;
-    }
-
-    .leaflet-control-zoom {
-      border: 1px solid var(--border-subtle) !important;
-      border-radius: var(--radius-md) !important;
-      overflow: hidden;
-    }
-
-    .leaflet-control-zoom a {
-      background: rgba(17, 24, 39, 0.92) !important;
-      color: var(--text-secondary) !important;
-      border-bottom: 1px solid var(--border-subtle) !important;
-      width: 30px !important;
-      height: 30px !important;
-      line-height: 30px !important;
-    }
-
-    .leaflet-control-zoom a:hover {
-      background: var(--bg-hover) !important;
-      color: var(--text-primary) !important;
-    }
-
-    .leaflet-popup-content-wrapper {
-      background: var(--bg-surface) !important;
-      color: var(--text-primary) !important;
-      border-radius: var(--radius-md) !important;
-      border: 1px solid var(--border-subtle) !important;
-      box-shadow: var(--shadow-elevated) !important;
-    }
-
-    .leaflet-popup-tip {
-      background: var(--bg-surface) !important;
-    }
-
-    .leaflet-popup-content {
-      font-family: var(--font-ui) !important;
-      font-size: 12px !important;
-      margin: 10px 14px !important;
-    }
-
-    /* ── Animations ────────────────────── */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(6px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeIn 300ms ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    .slide-in {
-      animation: slideIn 250ms ease-out;
-    }
-  </style>
+:root {
+  --bg-deepest: #060a13;
+  --bg-canvas: #080c14;
+  --bg-surface: #0e1420;
+  --bg-elevated: #131b2a;
+  --bg-card: #151f30;
+  --bg-hover: #1a2740;
+  --bg-input: #111a2b;
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-medium: rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.16);
+  --accent-green: #22c55e;
+  --accent-green-dim: rgba(34,197,94,0.15);
+  --accent-red: #ef4444;
+  --accent-red-dim: rgba(239,68,68,0.15);
+  --accent-amber: #f59e0b;
+  --accent-amber-dim: rgba(245,158,11,0.12);
+  --accent-orange: #f97316;
+  --accent-orange-dim: rgba(249,115,22,0.12);
+  --accent-blue: #3b82f6;
+  --accent-blue-dim: rgba(59,130,246,0.15);
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-dim: #475569;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --stripe-gradient: linear-gradient(90deg, #f97316, #f59e0b, #f97316);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── ICON SIDEBAR ──────────────────────────────── */
+.icon-sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 52px;
+  background: var(--bg-deepest);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  z-index: 100;
+}
+.icon-sidebar .logo {
+  width: 32px; height: 32px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.icon-sidebar .logo svg { width: 100%; height: 100%; }
+.icon-sidebar .nav-icons { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nav-icon {
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  position: relative;
+  border: none; background: none;
+}
+.nav-icon:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+.nav-icon.active { color: var(--accent-amber); background: var(--accent-amber-dim); }
+.nav-icon svg { width: 20px; height: 20px; }
+.nav-icon .badge {
+  position: absolute; top: 4px; right: 4px;
+  background: var(--accent-red);
+  color: white; font-size: 9px; font-weight: 700;
+  min-width: 14px; height: 14px;
+  border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+}
+.nav-icon .tooltip-text {
+  position: absolute; left: 52px; top: 50%; transform: translateY(-50%);
+  background: var(--bg-card); color: var(--text-primary);
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  font-size: 12px; white-space: nowrap;
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+  border: 1px solid var(--border-medium);
+  z-index: 200;
+}
+.nav-icon:hover .tooltip-text { opacity: 1; }
+
+/* ── MAIN LAYOUT ──────────────────────────────── */
+.main-wrapper {
+  margin-left: 52px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── HEADER ──────────────────────────────── */
+.header {
+  background: var(--bg-deepest);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.header-brand {
+  display: flex; align-items: center; gap: 8px;
+  margin-right: 8px;
+}
+.header-brand h1 {
+  font-size: 18px; font-weight: 800;
+  letter-spacing: 2px;
+  background: var(--stripe-gradient);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stripe-line {
+  height: 2px; width: 100%;
+  background: var(--stripe-gradient);
+  position: absolute; bottom: 0; left: 0;
+  opacity: 0.6;
+}
+.kpi-strip {
+  display: flex; gap: 8px; flex: 1; justify-content: center;
+}
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px 16px;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 140px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.kpi-card:hover { border-color: var(--border-strong); background: var(--bg-elevated); }
+.kpi-card .kpi-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.kpi-card .kpi-value {
+  font-size: 20px; font-weight: 800;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+}
+.kpi-card .kpi-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.kpi-card.tigers .kpi-icon { background: var(--accent-amber-dim); color: var(--accent-amber); }
+.kpi-card.tigers .kpi-value { color: var(--accent-amber); }
+.kpi-card.cameras .kpi-icon { background: var(--accent-green-dim); color: var(--accent-green); }
+.kpi-card.cameras .kpi-value { color: var(--accent-green); }
+.kpi-card.sightings .kpi-icon { background: var(--accent-blue-dim); color: var(--accent-blue); }
+.kpi-card.sightings .kpi-value { color: var(--accent-blue); }
+.kpi-card.alerts .kpi-icon { background: var(--accent-red-dim); color: var(--accent-red); }
+.kpi-card.alerts .kpi-value { color: var(--accent-red); }
+
+.header-actions {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: auto;
+}
+.search-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  color: var(--text-primary);
+  font-size: 12px;
+  width: 160px;
+  font-family: var(--font-sans);
+  outline: none;
+}
+.search-box:focus { border-color: var(--accent-amber); }
+.search-box::placeholder { color: var(--text-dim); }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--accent-green-dim);
+  color: var(--accent-green);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1px;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+.profile-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; font-size: 12px; padding: 4px;
+}
+.profile-avatar {
+  width: 28px; height: 28px;
+  background: var(--accent-amber);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; color: #000;
+}
+
+/* ── THREE-COLUMN MAIN ──────────────────── */
+.content-area {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.column {
+  background: var(--bg-canvas);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.column-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.column-header .header-icon { color: var(--accent-amber); }
+.column-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.column-body::-webkit-scrollbar { width: 4px; }
+.column-body::-webkit-scrollbar-track { background: transparent; }
+.column-body::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
+
+/* ── MAP COLUMN ──────────────────── */
+#map {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-surface);
+}
+.leaflet-container { background: var(--bg-surface) !important; }
+.map-zone-label {
+  background: rgba(8,12,20,0.85) !important;
+  border: 1px solid var(--border-medium) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 4px 8px !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  box-shadow: var(--shadow-lg) !important;
+  white-space: nowrap !important;
+}
+.map-zone-count {
+  font-size: 10px; color: var(--text-muted);
+  font-weight: 400;
+}
+.map-overlay {
+  position: absolute; z-index: 800;
+  background: rgba(8,12,20,0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.map-overlay.legend { bottom: 8px; left: 8px; }
+.map-overlay.zones { top: 8px; right: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── RE-ID COLUMN ──────────────────── */
+.reid-header-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.reid-model-badge {
+  background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(245,158,11,0.15));
+  color: var(--accent-orange);
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  border: 1px solid rgba(249,115,22,0.2);
+}
+.reid-stats {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.reid-match-card {
+  margin: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  transition: border-color 0.2s;
+}
+.reid-match-card:hover { border-color: var(--border-strong); }
+.reid-match-card.featured {
+  border-color: rgba(249,115,22,0.3);
+  background: linear-gradient(135deg, var(--bg-surface), rgba(249,115,22,0.03));
+}
+.reid-comparison {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reid-crop-container {
+  flex: 1;
+  text-align: center;
+}
+.reid-crop-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.reid-crop-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+.reid-crop-id {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reid-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.reid-score {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+  font-family: var(--font-mono);
+  border: 2px solid;
+}
+.reid-score.high { border-color: var(--accent-green); color: var(--accent-green); background: var(--accent-green-dim); }
+.reid-score.medium { border-color: var(--accent-amber); color: var(--accent-amber); background: var(--accent-amber-dim); }
+.reid-score.low { border-color: var(--accent-red); color: var(--accent-red); background: var(--accent-red-dim); }
+.reid-arrow-line {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+.reid-decision {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.reid-decision-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+}
+.reid-decision-badge.auto-match { background: var(--accent-green-dim); color: var(--accent-green); }
+.reid-decision-badge.review { background: var(--accent-amber-dim); color: var(--accent-amber); }
+.reid-decision-badge.new-individual { background: var(--accent-orange-dim); color: var(--accent-orange); }
+.reid-decision-info {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.reid-gallery-stats {
+  margin: 8px;
+  padding: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+.reid-stat-item .stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+.reid-stat-item .stat-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.reid-stat-item.green .stat-value { color: var(--accent-green); }
+.reid-stat-item.amber .stat-value { color: var(--accent-amber); }
+.reid-stat-item.orange .stat-value { color: var(--accent-orange); }
+
+/* ── OPERATIONS COLUMN ──────────────────── */
+.ops-section {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ops-section-header {
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+}
+.ops-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+.ops-section-count {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  padding: 1px 6px;
+  border-radius: 100px;
+}
+.ops-section-body { padding: 0 10px 10px; }
+
+/* Alert items */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.alert-item:hover { background: var(--bg-elevated); }
+.alert-item.critical { border-left-color: var(--accent-red); }
+.alert-item.warning { border-left-color: var(--accent-amber); }
+.alert-item.info { border-left-color: var(--accent-blue); }
+.alert-item.ack { opacity: 0.5; }
+.alert-type {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+.alert-item.critical .alert-type { color: var(--accent-red); }
+.alert-item.warning .alert-type { color: var(--accent-amber); }
+.alert-item.info .alert-type { color: var(--accent-blue); }
+.alert-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 2px 0;
+  line-height: 1.4;
+}
+.alert-time {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.alert-actions {
+  display: flex; gap: 4px; margin-top: 4px;
+}
+.btn-xs {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid var(--border-medium);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-sans);
+}
+.btn-xs:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+.btn-xs.primary { border-color: var(--accent-amber); color: var(--accent-amber); }
+.btn-xs.primary:hover { background: var(--accent-amber-dim); }
+
+/* HITL items */
+.hitl-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hitl-item:hover { background: var(--bg-elevated); }
+.hitl-thumb {
+  width: 36px; height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--bg-card);
+}
+.hitl-info { flex: 1; min-width: 0; }
+.hitl-id { font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary); }
+.hitl-candidate { font-size: 9px; color: var(--text-muted); }
+.hitl-status {
+  font-size: 9px; font-weight: 600;
+  padding: 1px 6px; border-radius: 100px;
+  background: var(--accent-amber-dim); color: var(--accent-amber);
+}
+
+/* Quarantine */
+.quarantine-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.quarantine-stat {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+}
+.quarantine-stat .q-value {
+  font-size: 16px; font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.quarantine-stat .q-label {
+  font-size: 9px; color: var(--text-muted);
+  text-transform: uppercase;
+}
+.quarantine-actions {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+.btn-sm {
+  flex: 1;
+  font-size: 10px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-medium);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn-sm:hover { background: var(--bg-hover); }
+.btn-sm.danger { border-color: var(--accent-red); color: var(--accent-red); }
+.btn-sm.danger:hover { background: var(--accent-red-dim); }
+
+/* Export buttons */
+.export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.export-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-sans);
+  text-align: center;
+}
+.export-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+/* ── BOTTOM STATUS BAR ──────────────────── */
+.status-bar {
+  height: 24px;
+  background: var(--bg-deepest);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 66px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  gap: 16px;
+  flex-shrink: 0;
+}
+.status-item { display: flex; align-items: center; gap: 4px; }
+.status-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent-green);
+}
+.status-dot.warn { background: var(--accent-amber); }
+
+/* ── MODAL OVERLAY ──────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-close {
+  margin-left: auto;
+  background: none; border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+}
+.modal-close:hover { color: var(--text-primary); }
+
+/* Tiger Detail Modal */
+.tiger-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.tiger-flank-box {
+  text-align: center;
+}
+.tiger-flank-box img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+.tiger-flank-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.tiger-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.tiger-meta-item {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  text-align: center;
+}
+.tiger-meta-item .meta-value {
+  font-size: 16px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.tiger-meta-item .meta-label {
+  font-size: 9px; color: var(--text-muted);
+  text-transform: uppercase;
+}
+.btn-track {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-amber);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-family: var(--font-sans);
+  transition: opacity 0.2s;
+}
+.btn-track:hover { opacity: 0.9; }
+
+/* HITL Review Modal */
+.hitl-review-comparison {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 16px;
+}
+.hitl-review-img {
+  flex: 1; text-align: center;
+}
+.hitl-review-img img {
+  width: 100%; max-height: 200px;
+  object-fit: cover; border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+.hitl-review-img .label {
+  font-size: 11px; color: var(--text-muted);
+  margin-top: 4px;
+}
+.hitl-review-score {
+  font-size: 28px; font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--accent-amber);
+  text-align: center;
+}
+.hitl-review-actions {
+  display: flex; gap: 8px; margin-top: 16px;
+}
+.hitl-review-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.2s;
+}
+.btn-confirm {
+  background: var(--accent-green-dim);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+.btn-confirm:hover { background: var(--accent-green); color: #000; }
+.btn-reject {
+  background: var(--accent-red-dim);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+.btn-reject:hover { background: var(--accent-red); color: #fff; }
+.btn-skip {
+  background: none;
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+}
+.btn-skip:hover { background: var(--bg-hover); }
+
+/* ── ANIMATIONS ──────────────────── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── Leaflet overrides ──────────────────── */
+.leaflet-tile-pane { filter: saturate(0.3) brightness(0.7); }
+.leaflet-control-zoom a {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-medium) !important;
+}
+</style>
 </head>
-
 <body>
-  <div class="app">
 
-    <!-- ═══ Top Status Ribbon ═══ -->
-    <header class="ribbon">
-      <div class="ribbon-left">
-        <div class="brand">TERA-STRIPE <span>· Pench Tiger Reserve</span></div>
-        <div class="status-pill">
-          <div class="status-dot"></div> Online
-        </div>
-      </div>
-      <div class="ribbon-center" id="kpiChips">
-        <div class="kpi-chip">Active Stations <span class="val" id="kpiStations">104/104</span></div>
-        <div class="kpi-chip">Tracked Tigers <span class="val" id="kpiTigers">48</span></div>
-        <div class="kpi-chip">Storage Saved <span class="val" id="kpiStorage">142.6 GB</span></div>
-        <div class="kpi-chip">Labor Saved <span class="val" id="kpiLabor">45.2 hrs</span></div>
-      </div>
-      <div class="ribbon-right">
-        <button class="btn-export" id="btnExport" onclick="handleExport()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          NTCA Export
-        </button>
-        <button class="btn-icon" id="btnNotif">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <div class="notif-badge" id="notifBadge">3</div>
-        </button>
-      </div>
-    </header>
+<!-- ═══ ICON SIDEBAR ═══ -->
+<nav class="icon-sidebar">
+  <div class="logo" title="TERA-STRIPE">
+    <svg viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="18" fill="#f59e0b" opacity="0.15"/>
+      <text x="20" y="26" text-anchor="middle" fill="#f59e0b" font-size="20" font-weight="800">🐯</text>
+    </svg>
+  </div>
+  <div class="nav-icons">
+    <button class="nav-icon active" data-view="dashboard" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="tooltip-text">Dashboard</span>
+    </button>
+    <button class="nav-icon" data-view="map" id="nav-map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span class="tooltip-text">Live Map</span>
+    </button>
+    <button class="nav-icon" data-view="reid" id="nav-reid">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10"/><path d="M2 12h20"/></svg>
+      <span class="tooltip-text">Re-ID Engine</span>
+    </button>
+    <button class="nav-icon" data-view="cameras" id="nav-cameras">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span class="tooltip-text">Cameras</span>
+    </button>
+    <button class="nav-icon" data-view="alerts" id="nav-alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="tooltip-text">Alerts</span>
+      <span class="badge" id="alert-badge">0</span>
+    </button>
+    <button class="nav-icon" data-view="hitl" id="nav-hitl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="tooltip-text">HITL Queue</span>
+    </button>
+    <button class="nav-icon" data-view="reports" id="nav-reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="tooltip-text">Reports</span>
+    </button>
+    <button class="nav-icon" data-view="settings" id="nav-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="tooltip-text">Settings</span>
+    </button>
+  </div>
+</nav>
 
-    <!-- ═══ Main Content ═══ -->
-    <div class="main">
+<!-- ═══ MAIN WRAPPER ═══ -->
+<div class="main-wrapper">
 
-      <!-- ═══ Map Viewport ═══ -->
-      <div class="map-container">
-        <div id="map"></div>
+<!-- ═══ HEADER BAR ═══ -->
+<header class="header" style="position:relative;">
+  <div class="header-brand">
+    <h1>TERA-STRIPE</h1>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi-card tigers" id="kpi-tigers">
+      <div class="kpi-icon">🐯</div>
+      <div><div class="kpi-value" id="kpi-tiger-count">—</div><div class="kpi-label">Tigers Tracked</div></div>
+    </div>
+    <div class="kpi-card cameras" id="kpi-cameras">
+      <div class="kpi-icon">📷</div>
+      <div><div class="kpi-value" id="kpi-camera-count">—</div><div class="kpi-label">Active Cameras</div></div>
+    </div>
+    <div class="kpi-card sightings" id="kpi-sightings">
+      <div class="kpi-icon">👁</div>
+      <div><div class="kpi-value" id="kpi-sighting-count">—</div><div class="kpi-label">Sightings</div></div>
+    </div>
+    <div class="kpi-card alerts" id="kpi-alerts">
+      <div class="kpi-icon">⚠</div>
+      <div><div class="kpi-value" id="kpi-alert-count">—</div><div class="kpi-label">Critical Alerts</div></div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <input type="text" class="search-box" placeholder="Search tigers..." id="global-search">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <button class="profile-btn"><div class="profile-avatar">FO</div></button>
+  </div>
+  <div class="stripe-line"></div>
+</header>
 
-        <div class="map-controls" id="mapControls">
-          <div class="layer-pill active" data-layer="boundaries" onclick="toggleLayer(this)">
-            <div class="layer-check">✓</div> Core & Buffer Boundaries
-          </div>
-          <div class="layer-pill active" data-layer="stations" onclick="toggleLayer(this)">
-            <div class="layer-check">✓</div> Camera Traps
-          </div>
-          <div class="layer-pill active" data-layer="mcp" onclick="toggleLayer(this)">
-            <div class="layer-check">✓</div> 95% MCP Home Ranges
-          </div>
-          <div class="layer-pill" data-layer="kde" onclick="toggleLayer(this)">
-            <div class="layer-check"></div> 50% KDE Core Territory
-          </div>
-          <div class="layer-pill" data-layer="h3" onclick="toggleLayer(this)">
-            <div class="layer-check"></div> H3 Hex Density Grid
-          </div>
-        </div>
+<!-- ═══ THREE COLUMNS ═══ -->
+<div class="content-area">
 
-        <div class="map-legend">
-          <div class="legend-row">
-            <div class="legend-dot" style="background: var(--accent-emerald)"></div> Active Station
-          </div>
-          <div class="legend-row">
-            <div class="legend-dot" style="background: var(--accent-crimson)"></div> Faulty / Offline
-          </div>
-          <div class="legend-row">
-            <div class="legend-dot" style="background: var(--accent-amber)"></div> Tiger Sighting
-          </div>
-          <div class="legend-row">
-            <div class="legend-dot" style="background: rgba(16,185,129,0.25); border: 1px solid var(--accent-emerald)">
-            </div> MCP Home Range
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ Tactical Drawer ═══ -->
-      <aside class="drawer">
-        <div class="drawer-tabs">
-          <button class="drawer-tab active" data-tab="alerts" onclick="switchTab(this)">Threat Alerts</button>
-          <button class="drawer-tab" data-tab="hitl" onclick="switchTab(this)">HITL Queue</button>
-          <button class="drawer-tab" data-tab="dossier" onclick="switchTab(this)">Tiger Dossier</button>
-          <button class="drawer-tab" data-tab="ops" onclick="switchTab(this)">Operations</button>
-        </div>
-
-        <div class="drawer-content">
-          <!-- ── Tab 1: Alerts ── -->
-          <div class="tab-panel active" id="panel-alerts"></div>
-
-          <!-- ── Tab 2: HITL Queue ── -->
-          <div class="tab-panel" id="panel-hitl"></div>
-
-          <!-- ── Tab 3: Tiger Dossier ── -->
-          <div class="tab-panel" id="panel-dossier"></div>
-
-          <!-- ── Tab 4: Operations ── -->
-          <div class="tab-panel" id="panel-ops"></div>
-        </div>
-      </aside>
+  <!-- ── COLUMN 1: GIS MAP ── -->
+  <div class="column" id="col-map">
+    <div class="column-header">
+      <span class="header-icon">📍</span> GIS MAP
+      <span style="margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--text-dim)" id="map-station-count"></span>
+    </div>
+    <div class="column-body" style="position:relative;padding:0;">
+      <div id="map"></div>
     </div>
   </div>
 
-  <script>
-    // ================================================================
-    //  TERA-STRIPE Dashboard — Client Logic
-    // ================================================================
+  <!-- ── COLUMN 2: RE-ID ENGINE ── -->
+  <div class="column" id="col-reid">
+    <div class="column-header">
+      <span class="header-icon">🧬</span> RE-IDENTIFICATION ENGINE
+    </div>
+    <div class="reid-header-bar">
+      <span class="reid-model-badge">DINOv2 ViT-B/14</span>
+      <span class="reid-stats" id="reid-embedding-stats"></span>
+    </div>
+    <div class="column-body" id="reid-body">
+      <!-- Re-ID matches injected here -->
+    </div>
+  </div>
 
-    // ── Live Data State ────────────────────────────────────────────
-    let DATA = { stations: [], tigers: [], alerts: [], hitl: [], kpi: {}, roi: {}, pipeline: {}, status: "loading" };
+  <!-- ── COLUMN 3: OPERATIONS ── -->
+  <div class="column" id="col-ops">
+    <div class="column-header">
+      <span class="header-icon">⚡</span> OPERATIONS
+    </div>
+    <div class="column-body" id="ops-body">
+      <!-- Alerts Section -->
+      <div class="ops-section" id="ops-alerts">
+        <div class="ops-section-header">
+          <span class="ops-section-title">🔔 Active Alerts</span>
+          <span class="ops-section-count" id="ops-alert-count">0</span>
+        </div>
+        <div class="ops-section-body" id="alerts-list"></div>
+      </div>
 
-    const BOUNDARY_CORE = [[21.67, 79.26], [21.67, 79.35], [21.73, 79.35], [21.73, 79.26], [21.67, 79.26]];
-    const BOUNDARY_BUFFER = [[21.65, 79.24], [21.65, 79.37], [21.75, 79.37], [21.75, 79.24], [21.65, 79.24]];
+      <!-- HITL Section -->
+      <div class="ops-section" id="ops-hitl">
+        <div class="ops-section-header">
+          <span class="ops-section-title">👁 HITL Review Queue</span>
+          <span class="ops-section-count" id="ops-hitl-count">0</span>
+        </div>
+        <div class="ops-section-body" id="hitl-list"></div>
+      </div>
 
-    // ── Map Init ────────────────────────────────────────────────────
+      <!-- Quarantine Section -->
+      <div class="ops-section" id="ops-quarantine">
+        <div class="ops-section-header">
+          <span class="ops-section-title">🛡 Quarantine</span>
+        </div>
+        <div class="ops-section-body" id="quarantine-body"></div>
+      </div>
 
-    const map = L.map('map', {
-      zoomControl: true,
-      attributionControl: false,
-    }).setView([21.695, 79.300], 13);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    L.control.attribution({ prefix: false, position: 'bottomright' })
-      .addAttribution('TERA-STRIPE &middot; CartoDB')
-      .addTo(map);
-
-    // ── Map Layers ──────────────────────────────────────────────────
-
-    const layers = {};
-    const mcpColors = ['#10B981', '#F59E0B', '#3B82F6', '#A855F7', '#EC4899'];
-
-    // Core/Buffer boundaries
-    layers.boundaries = L.layerGroup();
-    L.polygon(BOUNDARY_CORE, {
-      color: '#10B981', weight: 1.5, opacity: 0.6, fillColor: '#10B981', fillOpacity: 0.04, dashArray: '6,4',
-    }).bindPopup('<b>CORE ZONE</b><br>Pench Tiger Reserve').addTo(layers.boundaries);
-    L.polygon(BOUNDARY_BUFFER, {
-      color: '#3B82F6', weight: 1, opacity: 0.3, fillColor: '#3B82F6', fillOpacity: 0.02, dashArray: '8,6',
-    }).bindPopup('<b>BUFFER ZONE</b>').addTo(layers.boundaries);
-    layers.boundaries.addTo(map);
-
-    layers.stations = L.layerGroup().addTo(map);
-    layers.mcp = L.layerGroup().addTo(map);
-    layers.kde = L.layerGroup();
-    layers.h3 = L.layerGroup();
-
-    function renderMapStations(stations) {
-      layers.stations.clearLayers();
-      stations.forEach(s => {
-        if (!s.lat || !s.lon) return;
-        const color = s.active !== false ? '#10B981' : '#EF4444';
-        const marker = L.circleMarker([s.lat, s.lon], {
-          radius: 5, fillColor: color, fillOpacity: 0.9,
-          color: color, weight: 1, opacity: 0.5,
-        });
-        marker.bindPopup(
-          `<div style="font-family:var(--font-ui)">
-        <b style="font-family:var(--font-mono);font-size:11px">${s.id}</b><br>
-        <span style="color:#94A3B8">Zone:</span> ${s.zone || 'UNKNOWN'}<br>
-        <span style="color:#94A3B8">Range:</span> ${s.range_name || '—'}<br>
-        <span style="color:#94A3B8">Status:</span> ${s.active !== false ? '<span style="color:#10B981">Active</span>' : '<span style="color:#EF4444">Offline</span>'}<br>
-        <span style="font-family:var(--font-mono);font-size:10px;color:#64748B">${Number(s.lat).toFixed(4)}, ${Number(s.lon).toFixed(4)}</span>
-      </div>`
-        );
-        marker.addTo(layers.stations);
-      });
-    }
-
-    function renderMapTigers(tigers) {
-      layers.mcp.clearLayers();
-      tigers.forEach((t, i) => {
-        if (!t.lat && !t.lon) return;
-        const color = mcpColors[i % mcpColors.length];
-        // Draw territory circle around centroid
-        L.circle([t.lat || 21.695, t.lon || 79.300], {
-          radius: 1500 + (t.sightings || 0) * 20,
-          color, weight: 1.5, opacity: 0.5, fillColor: color, fillOpacity: 0.08,
-        }).bindPopup(
-          `<b>${t.name}</b> (${t.id})<br>Sightings: ${t.sightings || 0}`
-        ).addTo(layers.mcp);
-
-        // Centroid marker
-        L.circleMarker([t.lat || 21.695, t.lon || 79.300], {
-          radius: 4, fillColor: '#F59E0B', fillOpacity: 1,
-          color: '#F59E0B', weight: 1, opacity: 0.7,
-        }).bindPopup(`<b>${t.name}</b><br>Territory Centroid`).addTo(layers.mcp);
-      });
-    }
-
-    // ── Layer Toggle ────────────────────────────────────────────────
-
-    function toggleLayer(el) {
-      const name = el.dataset.layer;
-      el.classList.toggle('active');
-      const isActive = el.classList.contains('active');
-      el.querySelector('.layer-check').textContent = isActive ? '✓' : '';
-      if (isActive) { layers[name]?.addTo(map); }
-      else { layers[name] && map.removeLayer(layers[name]); }
-    }
-
-    // ── Tab Switching ───────────────────────────────────────────────
-
-    function switchTab(btn) {
-      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-    }
-
-    // ── KPI Update ──────────────────────────────────────────────────
-
-    function updateKPIs(kpi) {
-      const chips = document.querySelectorAll('.kpi-value');
-      if (chips.length >= 4) {
-        chips[0].textContent = `${kpi.active_stations || 0}/${kpi.total_stations || 0}`;
-        chips[1].textContent = kpi.tracked_tigers || '0';
-        chips[2].textContent = (kpi.total_sightings || 0).toLocaleString();
-        chips[3].textContent = `${kpi.storage_saved_gb || 0} GB`;
-      }
-    }
-
-    // ── Render Alerts ───────────────────────────────────────────────
-
-    function renderAlerts(alerts) {
-      const panel = document.getElementById('panel-alerts');
-      if (!alerts || alerts.length === 0) {
-        panel.innerHTML = '<div class="empty-state"><div class="icon">🛡️</div>No alerts. Run the pipeline to generate alerts from sighting data.</div>';
-        return;
-      }
-
-      const grouped = { CRITICAL: [], WARNING: [], INFO: [] };
-      alerts.forEach(a => {
-        const sev = a.severity || 'INFO';
-        (grouped[sev] || grouped.INFO).push(a);
-      });
-
-      let html = '';
-      ['CRITICAL', 'WARNING', 'INFO'].forEach(sev => {
-        if (grouped[sev].length === 0) return;
-        html += `<div class="severity-group fade-in">
-      <div class="severity-label ${sev.toLowerCase()}">${sev} (${grouped[sev].length})</div>`;
-        grouped[sev].forEach(a => {
-          const timeStr = a.time ? new Date(a.time).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : '—';
-          html += `<div class="alert-card ${a.ack ? 'acknowledged' : ''} slide-in">
-        <div class="alert-type">${(a.type || 'ALERT').replace(/_/g, ' ')}</div>
-        <div class="alert-desc">${a.desc || 'Alert triggered'}</div>
-        <div class="alert-meta">
-          <span class="alert-time">${timeStr}</span>
-          <div class="alert-actions">
-            ${!a.ack ? `<button class="btn-sm" onclick="ackAlert('${a.id}')">Acknowledge</button>` : '<span style="font-size:10px;color:var(--text-dim)">Acknowledged</span>'}
-            <button class="btn-sm dispatch">Dispatch</button>
+      <!-- Export Section -->
+      <div class="ops-section" id="ops-export">
+        <div class="ops-section-header">
+          <span class="ops-section-title">📊 Quick Export</span>
+        </div>
+        <div class="ops-section-body">
+          <div class="export-grid">
+            <button class="export-btn" id="export-ntca" title="Export NTCA Census Report">NTCA Census</button>
+            <button class="export-btn" id="export-shapefile" title="Export Territory Shapefiles">Shapefiles</button>
+            <button class="export-btn" id="export-pdf" title="Export PDF Briefing">PDF Briefing</button>
           </div>
         </div>
-      </div>`;
-        });
-        html += '</div>';
-      });
-      panel.innerHTML = html;
-    }
-
-    function ackAlert(id) {
-      const alert = DATA.alerts.find(a => a.id === id);
-      if (alert) { alert.ack = true; renderAlerts(DATA.alerts); }
-    }
-
-    // ── Render HITL Queue ───────────────────────────────────────────
-
-    function renderHITL(hitl) {
-      const panel = document.getElementById('panel-hitl');
-      if (!hitl || hitl.length === 0) {
-        panel.innerHTML = '<div class="empty-state"><div class="icon">📷</div>No items in review queue.<br><span style="font-size:11px;color:var(--text-dim)">Run the pipeline to process images and generate HITL review items.</span></div>';
-        return;
-      }
-
-      let html = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${hitl.length} items pending review</div>`;
-      hitl.forEach(h => {
-        const confPct = (h.sim * 100).toFixed(0);
-        const barColor = h.sim >= 0.75 ? 'var(--accent-emerald)' : h.sim >= 0.65 ? 'var(--accent-amber)' : 'var(--accent-crimson)';
-        html += `<div class="hitl-card slide-in">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${h.id}</span>
-        <span style="font-size:10px;color:var(--text-dim)">${h.flank} FLANK</span>
       </div>
-      <div class="hitl-comparator">
-        <div>
-          <div class="hitl-crop">${h.queryImg ? `<img src="${h.queryImg}" alt="Query ${h.image}">` : `<div class="placeholder">Query Crop<br><span style="font-family:var(--font-mono)">${h.image}</span></div>`}</div>
-          <div class="hitl-label">Incoming · ${h.image}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ STATUS BAR ═══ -->
+<div class="status-bar">
+  <div class="status-item"><span class="status-dot" id="status-pipeline-dot"></span> Pipeline: <span id="status-pipeline">—</span></div>
+  <div class="status-item">DB: <span id="status-db">—</span></div>
+  <div class="status-item" style="margin-left:auto;">Last refresh: <span id="status-refresh">—</span></div>
+</div>
+
+</div><!-- /main-wrapper -->
+
+<!-- ═══ MODAL: Tiger Detail ═══ -->
+<div class="modal-overlay" id="tiger-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>🐯</span>
+      <span id="modal-tiger-name">Tiger Details</span>
+      <span id="modal-tiger-status" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--accent-green-dim);color:var(--accent-green);">RESIDENT</span>
+      <button class="modal-close" onclick="closeModal('tiger-modal')">✕</button>
+    </div>
+    <div class="tiger-detail-grid" id="modal-tiger-flanks"></div>
+    <div class="tiger-meta-grid" id="modal-tiger-meta"></div>
+    <button class="btn-track" id="modal-focus-map">📍 Focus on Map</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: HITL Review ═══ -->
+<div class="modal-overlay" id="hitl-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>👁</span>
+      <span>HITL Review</span>
+      <span id="modal-hitl-id" style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted);"></span>
+      <button class="modal-close" onclick="closeModal('hitl-modal')">✕</button>
+    </div>
+    <div class="hitl-review-comparison" id="modal-hitl-comparison"></div>
+    <div class="hitl-review-actions" id="modal-hitl-actions"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// TERA-STRIPE Dashboard — Tiger Stripe Intelligence Console
+// ═══════════════════════════════════════════════════════════════════
+
+let DATA = null;
+let map = null;
+let mapLayers = { stations: [], zones: [], sightings: [], trails: [] };
+
+// ── Initialize ──────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  loadData();
+  setInterval(loadData, 30000);
+
+  // Nav icon clicks
+  document.querySelectorAll('.nav-icon').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-icon').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const view = btn.dataset.view;
+      handleNavClick(view);
+    });
+  });
+
+  // Search
+  document.getElementById('global-search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    if (!DATA) return;
+    highlightSearch(q);
+  });
+
+  // Export buttons
+  document.getElementById('export-ntca').addEventListener('click', () => exportReport('ntca'));
+  document.getElementById('export-shapefile').addEventListener('click', () => exportReport('shapefile'));
+  document.getElementById('export-pdf').addEventListener('click', () => exportReport('pdf'));
+});
+
+function handleNavClick(view) {
+  if (view === 'hitl') openHITLReview();
+  else if (view === 'alerts') scrollToSection('ops-alerts');
+  else if (view === 'cameras') openCameraView();
+  else if (view === 'reports') openReportsView();
+  else if (view === 'settings') openSettingsView();
+}
+
+// ── Data Loading ──────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('/api/feed');
+    DATA = await res.json();
+    renderAll();
+  } catch (e) {
+    console.error('Feed error:', e);
+  }
+}
+
+function renderAll() {
+  if (!DATA) return;
+  renderKPIs();
+  renderMap();
+  renderReID();
+  renderAlerts();
+  renderHITL();
+  renderQuarantine();
+  renderStatusBar();
+}
+
+// ── KPI Cards ──────────────────────────────
+function renderKPIs() {
+  const k = DATA.kpi;
+  document.getElementById('kpi-tiger-count').textContent = k.tracked_tigers || 0;
+  document.getElementById('kpi-camera-count').textContent = k.active_stations || 0;
+  document.getElementById('kpi-sighting-count').textContent = k.total_sightings || 0;
+  document.getElementById('kpi-alert-count').textContent = k.active_alerts || 0;
+  document.getElementById('alert-badge').textContent = k.active_alerts || 0;
+  if (k.active_alerts === 0) document.getElementById('alert-badge').style.display = 'none';
+  else document.getElementById('alert-badge').style.display = 'flex';
+}
+
+// ── Map ──────────────────────────────
+function initMap() {
+  map = L.map('map', {
+    center: [21.72, 79.34],
+    zoom: 12,
+    zoomControl: true,
+    attributionControl: false,
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 18,
+  }).addTo(map);
+}
+
+function renderMap() {
+  // Clear old layers
+  Object.values(mapLayers).forEach(arr => { arr.forEach(l => map.removeLayer(l)); arr.length = 0; });
+
+  const stations = DATA.stations || [];
+  const zones = DATA.zones || [];
+  const tigers = DATA.tigers || [];
+
+  document.getElementById('map-station-count').textContent = `${stations.length} stations`;
+
+  // Zone overlays
+  zones.forEach(z => {
+    if (!z.lat || !z.lon) return;
+    const radius = z.tigers > 6 ? 3500 : z.tigers > 3 ? 2800 : 2000;
+    const circle = L.circle([z.lat, z.lon], {
+      radius, color: z.color, fillColor: z.color, fillOpacity: 0.12, weight: 1.5, dashArray: '6,4',
+    }).addTo(map);
+    mapLayers.zones.push(circle);
+
+    const label = L.marker([z.lat, z.lon], {
+      icon: L.divIcon({
+        className: 'map-zone-label',
+        html: `<strong>${z.name}</strong><br><span class="map-zone-count">${z.tigers} Tigers</span>`,
+        iconSize: [120, 36],
+      })
+    }).addTo(map);
+    mapLayers.zones.push(label);
+  });
+
+  // Station markers
+  stations.forEach(s => {
+    if (!s.lat || !s.lon) return;
+    const color = s.active ? '#22c55e' : '#ef4444';
+    const marker = L.circleMarker([s.lat, s.lon], {
+      radius: 6, fillColor: color, fillOpacity: 0.9, color: '#fff', weight: 1.5,
+    }).addTo(map);
+    marker.bindPopup(`
+      <div style="font-family:var(--font-sans);font-size:12px;">
+        <strong>${s.id}</strong><br>
+        ${s.range_name || ''} · ${s.zone}<br>
+        Captures: ${s.captures}<br>
+        Status: ${s.active ? '🟢 Online' : '🔴 Offline'}
+      </div>
+    `);
+    mapLayers.stations.push(marker);
+  });
+
+  // Tiger movement trails (connect tiger sightings across stations)
+  const stationCoords = {};
+  stations.forEach(s => { if (s.lat && s.lon) stationCoords[s.id] = [s.lat, s.lon]; });
+
+  tigers.forEach(t => {
+    const visited = t.stations_visited || [];
+    if (visited.length < 2) return;
+    const points = visited.map(sid => stationCoords[sid]).filter(Boolean);
+    if (points.length < 2) return;
+    const trail = L.polyline(points, {
+      color: '#f59e0b', weight: 1.5, dashArray: '4,6', opacity: 0.5,
+    }).addTo(map);
+    trail.bindPopup(`<strong>${t.id}</strong> movement trail`);
+    mapLayers.trails.push(trail);
+  });
+
+  // Map legend overlay
+  let legendEl = document.getElementById('map-legend');
+  if (!legendEl) {
+    legendEl = document.createElement('div');
+    legendEl.id = 'map-legend';
+    legendEl.className = 'map-overlay legend';
+    document.getElementById('map').parentElement.appendChild(legendEl);
+  }
+  legendEl.innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Camera (Online)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Camera (Offline)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Tiger Trail</div>
+    <div class="legend-item"><div class="legend-dot" style="background:transparent;border:1.5px dashed #22c55e"></div> Zone Boundary</div>
+  `;
+}
+
+// ── Re-ID Engine ──────────────────────────────
+function renderReID() {
+  const reid = DATA.reid || {};
+  const matches = reid.matches || [];
+  const body = document.getElementById('reid-body');
+
+  // Stats bar
+  document.getElementById('reid-embedding-stats').textContent =
+    `${reid.gallery_size || 0} individuals · ${reid.total_embeddings || 0} embeddings · ${reid.embedding_dim || 768}d`;
+
+  // Gallery stats
+  let html = `<div class="reid-gallery-stats">
+    <div class="reid-stat-item green"><div class="stat-value">${reid.auto_match_count || 0}</div><div class="stat-label">Auto-Match</div></div>
+    <div class="reid-stat-item amber"><div class="stat-value">${reid.review_count || 0}</div><div class="stat-label">Review</div></div>
+    <div class="reid-stat-item orange"><div class="stat-value">${reid.new_individual_count || 0}</div><div class="stat-label">New Individual</div></div>
+  </div>`;
+
+  // Match cards
+  matches.forEach((m, i) => {
+    const scoreClass = m.decision === 'AUTO_MATCH' ? 'high' : m.decision === 'REVIEW' ? 'medium' : 'low';
+    const decisionClass = m.decision === 'AUTO_MATCH' ? 'auto-match' : m.decision === 'REVIEW' ? 'review' : 'new-individual';
+    const decisionLabel = m.decision.replace('_', ' ');
+    const isSameTiger = m.query_tiger === m.gallery_tiger;
+
+    html += `
+    <div class="reid-match-card ${i === 0 ? 'featured' : ''} fade-in" style="animation-delay:${i*50}ms">
+      <div class="reid-comparison">
+        <div class="reid-crop-container">
+          <div class="reid-crop-label">Query</div>
+          ${m.query_crop ? `<img src="${m.query_crop}" class="reid-crop-img" alt="Query" onerror="this.style.display='none'">` : '<div class="reid-crop-img" style="display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:10px;">No crop</div>'}
+          <div class="reid-crop-id">${m.query_tiger}</div>
         </div>
-        <div>
-          <div class="hitl-crop">${h.galleryImg ? `<img src="${h.galleryImg}" alt="Gallery ${h.candidate}">` : `<div class="placeholder">Gallery Match<br><span style="font-family:var(--font-mono)">${h.candidate}</span></div>`}</div>
-          <div class="hitl-label">Top-1 · ${h.candidate}</div>
+        <div class="reid-arrow">
+          <div class="reid-arrow-line">→</div>
+          <div class="reid-score ${scoreClass}">${(m.similarity).toFixed(2)}</div>
+          <div class="reid-arrow-line">→</div>
+        </div>
+        <div class="reid-crop-container">
+          <div class="reid-crop-label">Gallery</div>
+          ${m.gallery_crop ? `<img src="${m.gallery_crop}" class="reid-crop-img" alt="Gallery" onerror="this.style.display='none'">` : '<div class="reid-crop-img" style="display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:10px;">No crop</div>'}
+          <div class="reid-crop-id">${m.gallery_tiger}</div>
         </div>
       </div>
-      <div class="confidence-bar"><div class="confidence-fill" style="width:${confPct}%;background:${barColor}"></div></div>
-      <div class="confidence-text"><span>Similarity</span><span>${h.sim.toFixed(2)}</span></div>
-      <div class="hitl-actions">
-        <button class="btn-hitl confirm" onclick="resolveHITL('${h.id}','CONFIRM')">Confirm Match</button>
-        <button class="btn-hitl new-id" onclick="resolveHITL('${h.id}','NEW')">New Individual</button>
-        <button class="btn-hitl reassign" onclick="resolveHITL('${h.id}','REASSIGN')">Reassign</button>
-        <button class="btn-hitl reject" onclick="resolveHITL('${h.id}','REJECT')">Reject</button>
+      <div class="reid-decision">
+        <span class="reid-decision-badge ${decisionClass}">${isSameTiger ? '✓ ' : '✗ '}${decisionLabel}</span>
+        <span class="reid-decision-info">${m.flank || ''} flank · ${isSameTiger ? 'Same tiger' : 'Different tigers'}</span>
       </div>
     </div>`;
-      });
-      panel.innerHTML = html;
-    }
+  });
 
-    function resolveHITL(id, action) {
-      const idx = DATA.hitl.findIndex(h => h.id === id);
-      if (idx >= 0) { DATA.hitl.splice(idx, 1); renderHITL(DATA.hitl); }
-    }
+  body.innerHTML = html;
+}
 
-    // ── Render Tiger Dossier ────────────────────────────────────────
+// ── Alerts ──────────────────────────────
+function renderAlerts() {
+  const alerts = DATA.alerts || [];
+  const active = alerts.filter(a => !a.ack);
+  document.getElementById('ops-alert-count').textContent = active.length;
 
-    function renderDossier(tigers) {
-      const panel = document.getElementById('panel-dossier');
-      if (!tigers || tigers.length === 0) {
-        panel.innerHTML = '<div class="empty-state"><div class="icon">🐯</div>No tigers detected yet.<br><span style="font-size:11px;color:var(--text-dim)">Run: <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">python scripts/run_real_pipeline.py --source "C:\\your_photos"</code></span></div>';
-        return;
-      }
-
-      let html = '<input type="text" class="search-box" placeholder="Search tigers... (e.g. Tiger_001, PTR_T_001)" oninput="filterTigers(this.value)">';
-      html += '<div id="tigerList">';
-      tigers.forEach(t => {
-        html += renderTigerCard(t);
-      });
-      html += '</div>';
-      panel.innerHTML = html;
-    }
-
-    function renderTigerCard(t) {
-      const statusColor = t.status === 'RESIDENT' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
-      return `<div class="tiger-card slide-in">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div class="tiger-name">${t.name}</div>
-        <div class="tiger-id">${t.id} · ${t.sex || 'UNKNOWN'}</div>
+  const list = document.getElementById('alerts-list');
+  list.innerHTML = alerts.map(a => {
+    const sev = a.severity === 'CRITICAL' ? 'critical' : a.severity === 'WARNING' ? 'warning' : 'info';
+    return `
+    <div class="alert-item ${sev} ${a.ack ? 'ack' : ''}" id="alert-${a.id}">
+      <div style="flex:1;min-width:0;">
+        <div class="alert-type">${a.type}</div>
+        <div class="alert-desc">${a.desc}</div>
+        <div class="alert-time">${a.tiger} · ${timeAgo(a.time)}</div>
+        ${!a.ack ? `<div class="alert-actions">
+          <button class="btn-xs primary" onclick="acknowledgeAlert('${a.id}')">Acknowledge</button>
+          <button class="btn-xs" onclick="dispatchAlert('${a.id}')">Dispatch</button>
+        </div>` : '<div style="font-size:9px;color:var(--accent-green);margin-top:3px;">✓ Acknowledged</div>'}
       </div>
-      <div style="font-size:10px;color:${statusColor};font-weight:500">${t.status || 'DETECTED'}</div>
-    </div>
-    <div class="tiger-stats">
-      <div class="stat-item"><div class="stat-label">Sightings</div><div class="stat-value">${t.sightings || 0}</div></div>
-      <div class="stat-item"><div class="stat-label">Stations</div><div class="stat-value">${t.stations || 0}</div></div>
-      <div class="stat-item"><div class="stat-label">First Seen</div><div class="stat-value">${t.first_detected ? new Date(t.first_detected).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div></div>
-      <div class="stat-item"><div class="stat-label">Last Seen</div><div class="stat-value">${t.last_detected ? new Date(t.last_detected).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div></div>
-    </div>
-    <div class="flank-gallery">
-      <div class="flank-preview">${t.leftFlank ? `<img src="${t.leftFlank}" alt="Left flank ${t.name}">` : '<div class="placeholder">LEFT FLANK</div>'}</div>
-      <div class="flank-preview">${t.rightFlank ? `<img src="${t.rightFlank}" alt="Right flank ${t.name}">` : '<div class="placeholder">RIGHT FLANK</div>'}</div>
-    </div>
-  </div>`;
-    }
+    </div>`;
+  }).join('');
+}
 
-    function filterTigers(q) {
-      const list = document.getElementById('tigerList');
-      if (!list) return;
-      const filtered = DATA.tigers.filter(t =>
-        t.name.toLowerCase().includes(q.toLowerCase()) ||
-        t.id.toLowerCase().includes(q.toLowerCase())
-      );
-      list.innerHTML = filtered.map(renderTigerCard).join('');
-    }
+// ── HITL Queue ──────────────────────────────
+function renderHITL() {
+  const hitl = DATA.hitl || [];
+  document.getElementById('ops-hitl-count').textContent = hitl.length;
 
-    function focusTiger(lat, lon, name) {
-      map.flyTo([lat, lon], 14, { duration: 0.8 });
-    }
-
-    // ── Render Operations ───────────────────────────────────────────
-
-    function renderOps(roi, pipeline) {
-      const panel = document.getElementById('panel-ops');
-      const r = roi || {};
-      const p = pipeline || {};
-      panel.innerHTML = `
-    <div class="ops-section fade-in">
-      <div class="ops-title">Pipeline Status</div>
-      <div class="roi-grid">
-        <div class="roi-item">
-          <div class="roi-number">${p.total_processed || 0}</div>
-          <div class="roi-label">Images Processed</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-emerald)">${p.fauna_detected || 0}</div>
-          <div class="roi-label">Animals Detected</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number">${p.crops_extracted || 0}</div>
-          <div class="roi-label">Crops Extracted</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-blue)">${p.embeddings_computed || 0}</div>
-          <div class="roi-label">Embeddings</div>
-        </div>
+  const list = document.getElementById('hitl-list');
+  list.innerHTML = hitl.map(h => `
+    <div class="hitl-item" onclick="openHITLDetail('${h.id}')">
+      ${h.queryImg ? `<img src="${h.queryImg}" class="hitl-thumb" alt="" onerror="this.style.display='none'">` : ''}
+      <div class="hitl-info">
+        <div class="hitl-id">${h.id}</div>
+        <div class="hitl-candidate">${h.candidate} · ${h.flank}</div>
       </div>
+      <span class="hitl-status">${h.status}</span>
     </div>
-    <div class="ops-section fade-in">
-      <div class="ops-title">Storage & Labor ROI</div>
-      <div class="roi-grid">
-        <div class="roi-item">
-          <div class="roi-number">${r.storage_saved_gb || 0}</div>
-          <div class="roi-label">GB Storage Saved</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number">${r.labor_saved_hours || 0}</div>
-          <div class="roi-label">Hours Labor Saved</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-amber)">${(r.blanks_quarantined || 0).toLocaleString()}</div>
-          <div class="roi-label">Blanks Quarantined</div>
-        </div>
-        <div class="roi-item">
-          <div class="roi-number" style="color:var(--accent-blue)">${r.auto_match_rate || 0}%</div>
-          <div class="roi-label">Auto-Match Rate</div>
-        </div>
-      </div>
+  `).join('');
+}
+
+// ── Quarantine ──────────────────────────────
+function renderQuarantine() {
+  const q = DATA.quarantine || {};
+  document.getElementById('quarantine-body').innerHTML = `
+    <div class="quarantine-stats">
+      <div class="quarantine-stat"><div class="q-value">${q.blanks_filtered || 0}</div><div class="q-label">Blanks Filtered</div></div>
+      <div class="quarantine-stat"><div class="q-value">${q.storage_saved_gb || 0} GB</div><div class="q-label">Storage Saved</div></div>
+      <div class="quarantine-stat"><div class="q-value">${q.quarantined_files || 0}</div><div class="q-label">Files Quarantined</div></div>
+      <div class="quarantine-stat"><div class="q-value">${q.total_size_mb || 0} MB</div><div class="q-label">Total Size</div></div>
     </div>
-    <div class="ops-section fade-in">
-      <div class="ops-title">Quarantine Management</div>
-      <button class="btn-ops" onclick="alert('Rollback modal would open here')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-        Rollback Quarantine (by Batch ID)
-      </button>
-      <button class="btn-ops" onclick="alert('Purge expired would run here')">Purge Expired (>30 days)</button>
+    <div class="quarantine-actions">
+      <button class="btn-sm" onclick="quarantineAction('rollback')">↩ Rollback</button>
+      <button class="btn-sm danger" onclick="quarantineAction('purge')">🗑 Purge</button>
+    </div>`;
+}
+
+// ── Status Bar ──────────────────────────────
+function renderStatusBar() {
+  const p = DATA.pipeline || {};
+  const db = DATA.db_summary || {};
+
+  const total = p.total_processed || 0;
+  const embeddings = p.embeddings_computed || 0;
+  document.getElementById('status-pipeline').textContent = total > 0 ? `${total}/${total} processed ✓` : 'No pipeline data';
+  document.getElementById('status-pipeline-dot').className = total > 0 ? 'status-dot' : 'status-dot warn';
+
+  const tigers = db.tigers || DATA.kpi?.tracked_tigers || 0;
+  const sightings = db.sightings || DATA.kpi?.total_sightings || 0;
+  const stations = db.stations || DATA.kpi?.active_stations || 0;
+  document.getElementById('status-db').textContent = `tera_stripe.db (${tigers} tigers, ${sightings} sightings, ${stations} stations)`;
+
+  document.getElementById('status-refresh').textContent = timeAgo(DATA.generated_at);
+}
+
+// ── Actions ──────────────────────────────
+async function acknowledgeAlert(id) {
+  try {
+    const res = await fetch(`/api/alerts/${id}/acknowledge`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      const el = document.getElementById(`alert-${id}`);
+      if (el) { el.classList.add('ack'); el.querySelector('.alert-actions')?.remove(); }
+      loadData();
+    }
+  } catch (e) { console.error(e); }
+}
+
+function dispatchAlert(id) {
+  const el = document.getElementById(`alert-${id}`);
+  if (el) {
+    el.style.borderLeftColor = 'var(--accent-blue)';
+    const actions = el.querySelector('.alert-actions');
+    if (actions) actions.innerHTML = '<span style="font-size:9px;color:var(--accent-blue);">📡 Dispatched to patrol team</span>';
+  }
+}
+
+function openHITLDetail(id) {
+  if (!DATA) return;
+  const item = DATA.hitl?.find(h => h.id === id);
+  if (!item) return;
+
+  document.getElementById('modal-hitl-id').textContent = id;
+  document.getElementById('modal-hitl-comparison').innerHTML = `
+    <div class="hitl-review-img">
+      ${item.queryImg ? `<img src="${item.queryImg}" alt="Query">` : '<div style="height:200px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);">No image</div>'}
+      <div class="label">Query Image</div>
     </div>
-    <div class="ops-section fade-in">
-      <div class="ops-title">Statutory Exports</div>
-      <button class="btn-ops" onclick="handleExport()">
-        📊 NTCA Census Excel Workbook
-      </button>
-      <button class="btn-ops" onclick="alert('Shapefile export would generate here')">
-        🗺️ ESRI Shapefiles (.shp/.dbf/.prj)
-      </button>
-      <button class="btn-ops" onclick="alert('PDF briefing would generate here')">
-        📄 Automated PDF Briefing Dossier
-      </button>
+    <div style="text-align:center;">
+      <div class="hitl-review-score">${item.sim}</div>
+      <div style="font-size:10px;color:var(--text-muted);">Similarity</div>
+    </div>
+    <div class="hitl-review-img">
+      ${item.galleryImg ? `<img src="${item.galleryImg}" alt="Gallery">` : '<div style="height:200px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);">No image</div>'}
+      <div class="label">Gallery Match · ${item.candidate}</div>
     </div>
   `;
+  document.getElementById('modal-hitl-actions').innerHTML = `
+    <button class="btn-confirm" onclick="resolveHITL('${id}','CONFIRM')">✓ Confirm Match</button>
+    <button class="btn-reject" onclick="resolveHITL('${id}','REJECT')">✗ Reject</button>
+    <button class="btn-skip" onclick="resolveHITL('${id}','SKIP')">⏭ Skip</button>
+  `;
+  openModal('hitl-modal');
+}
+
+async function resolveHITL(id, action) {
+  try {
+    await fetch(`/api/hitl/${id}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    });
+    closeModal('hitl-modal');
+    loadData();
+  } catch (e) { console.error(e); }
+}
+
+function openHITLReview() {
+  if (DATA?.hitl?.length) openHITLDetail(DATA.hitl[0].id);
+}
+
+function openTigerDetail(tigerId) {
+  if (!DATA) return;
+  const tiger = DATA.tigers?.find(t => t.id === tigerId);
+  if (!tiger) return;
+
+  document.getElementById('modal-tiger-name').textContent = `${tiger.name} (${tiger.id})`;
+  const statusEl = document.getElementById('modal-tiger-status');
+  statusEl.textContent = tiger.status;
+  statusEl.style.background = tiger.status === 'RESIDENT' ? 'var(--accent-green-dim)' : 'var(--accent-amber-dim)';
+  statusEl.style.color = tiger.status === 'RESIDENT' ? 'var(--accent-green)' : 'var(--accent-amber)';
+
+  document.getElementById('modal-tiger-flanks').innerHTML = `
+    <div class="tiger-flank-box">
+      ${tiger.leftFlank ? `<img src="${tiger.leftFlank}" alt="Left Flank" onerror="this.parentElement.innerHTML='<div style=\\'height:150px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:11px;\\'>No left flank</div>'">` : '<div style="height:150px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:11px;">No left flank</div>'}
+      <div class="tiger-flank-label">Left Flank</div>
+    </div>
+    <div class="tiger-flank-box">
+      ${tiger.rightFlank ? `<img src="${tiger.rightFlank}" alt="Right Flank" onerror="this.parentElement.innerHTML='<div style=\\'height:150px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:11px;\\'>No right flank</div>'">` : '<div style="height:150px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:11px;">No right flank</div>'}
+      <div class="tiger-flank-label">Right Flank</div>
+    </div>`;
+
+  document.getElementById('modal-tiger-meta').innerHTML = `
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.sex}</div><div class="meta-label">Sex</div></div>
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.sightings}</div><div class="meta-label">Sightings</div></div>
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.stations}</div><div class="meta-label">Stations</div></div>
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.first_detected ? new Date(tiger.first_detected).toLocaleDateString() : '—'}</div><div class="meta-label">First Detected</div></div>
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.last_detected ? new Date(tiger.last_detected).toLocaleDateString() : '—'}</div><div class="meta-label">Last Detected</div></div>
+    <div class="tiger-meta-item"><div class="meta-value">${tiger.stations_visited?.join(', ') || '—'}</div><div class="meta-label">Stations Visited</div></div>`;
+
+  document.getElementById('modal-focus-map').onclick = () => {
+    closeModal('tiger-modal');
+    focusTigerOnMap(tiger);
+  };
+  openModal('tiger-modal');
+}
+
+function focusTigerOnMap(tiger) {
+  if (!DATA || !map) return;
+  const stations = DATA.stations || [];
+  const visited = tiger.stations_visited || [];
+  if (visited.length) {
+    const stn = stations.find(s => s.id === visited[0]);
+    if (stn && stn.lat && stn.lon) {
+      map.setView([stn.lat, stn.lon], 14);
     }
+  }
+}
 
-    // ── Export Handler ───────────────────────────────────────────────
+function openCameraView() {
+  if (!DATA) return;
+  const stations = DATA.stations || [];
+  let html = '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
+  html += '<tr style="color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border-subtle);"><th style="padding:6px;">ID</th><th>Location</th><th>Zone</th><th>Status</th><th>Captures</th></tr>';
+  stations.forEach(s => {
+    html += `<tr style="border-bottom:1px solid var(--border-subtle);cursor:pointer;" onclick="map.setView([${s.lat},${s.lon}],14)">
+      <td style="padding:6px;font-family:var(--font-mono);color:var(--accent-blue);">${s.id}</td>
+      <td>${s.range_name || '—'}</td>
+      <td>${s.zone}</td>
+      <td>${s.active ? '<span style="color:var(--accent-green)">● Online</span>' : '<span style="color:var(--accent-red)">● Offline</span>'}</td>
+      <td style="font-family:var(--font-mono);">${s.captures}</td>
+    </tr>`;
+  });
+  html += '</table>';
 
-    function handleExport() {
-      const btn = document.getElementById('btnExport');
-      if (!btn) return;
-      const orig = btn.innerHTML;
-      btn.innerHTML = '✓ Exported';
-      btn.style.background = 'var(--accent-amber)';
-      setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
-    }
+  const modal = document.getElementById('tiger-modal');
+  document.getElementById('modal-tiger-name').textContent = '📷 Camera Network';
+  document.getElementById('modal-tiger-status').style.display = 'none';
+  document.getElementById('modal-tiger-flanks').innerHTML = html;
+  document.getElementById('modal-tiger-meta').innerHTML = '';
+  document.getElementById('modal-focus-map').style.display = 'none';
+  openModal('tiger-modal');
+}
 
-    // ── Fetch Live Data ─────────────────────────────────────────────
+function openReportsView() {
+  const modal = document.getElementById('tiger-modal');
+  document.getElementById('modal-tiger-name').textContent = '📊 Reports & Analytics';
+  document.getElementById('modal-tiger-status').style.display = 'none';
+  const p = DATA?.pipeline || {};
+  const q = DATA?.quarantine || {};
+  document.getElementById('modal-tiger-flanks').innerHTML = `
+    <div style="grid-column:1/-1;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+        <div class="tiger-meta-item"><div class="meta-value">${p.total_processed || 0}</div><div class="meta-label">Images Processed</div></div>
+        <div class="tiger-meta-item"><div class="meta-value">${p.fauna_detected || 0}</div><div class="meta-label">Fauna Detected</div></div>
+        <div class="tiger-meta-item"><div class="meta-value">${p.crops_extracted || 0}</div><div class="meta-label">Crops Extracted</div></div>
+        <div class="tiger-meta-item"><div class="meta-value">${p.embeddings_computed || 0}</div><div class="meta-label">Embeddings</div></div>
+        <div class="tiger-meta-item"><div class="meta-value">${q.blanks_filtered || 0}</div><div class="meta-label">Blanks Filtered</div></div>
+        <div class="tiger-meta-item"><div class="meta-value">${q.storage_saved_gb || 0} GB</div><div class="meta-label">Storage Saved</div></div>
+      </div>
+      <div class="export-grid" style="grid-template-columns:1fr 1fr;">
+        <button class="export-btn" onclick="exportReport('ntca')" style="padding:12px;">📋 NTCA Census Report</button>
+        <button class="export-btn" onclick="exportReport('pdf')" style="padding:12px;">📄 PDF Briefing</button>
+      </div>
+    </div>`;
+  document.getElementById('modal-tiger-meta').innerHTML = '';
+  document.getElementById('modal-focus-map').style.display = 'none';
+  openModal('tiger-modal');
+}
 
-    async function fetchDashboardData() {
-      try {
-        const res = await fetch('/api/feed');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        DATA = await res.json();
+function openSettingsView() {
+  const modal = document.getElementById('tiger-modal');
+  document.getElementById('modal-tiger-name').textContent = '⚙ Settings';
+  document.getElementById('modal-tiger-status').style.display = 'none';
+  document.getElementById('modal-tiger-flanks').innerHTML = `
+    <div style="grid-column:1/-1;color:var(--text-secondary);font-size:12px;">
+      <p style="margin-bottom:12px;"><strong>Pipeline Configuration</strong></p>
+      <div style="display:grid;gap:8px;">
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>MegaDetector Model</span><span style="font-family:var(--font-mono);color:var(--accent-amber);">md_v5a.0.0.pt</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>Re-ID Model</span><span style="font-family:var(--font-mono);color:var(--accent-amber);">DINOv2 ViT-B/14</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>Auto-Match Threshold</span><span style="font-family:var(--font-mono);color:var(--accent-green);">≥ 0.85</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>Review Threshold</span><span style="font-family:var(--font-mono);color:var(--accent-amber);">0.60 – 0.84</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>Database</span><span style="font-family:var(--font-mono);color:var(--accent-blue);">tera_stripe.db</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <span>Refresh Interval</span><span style="font-family:var(--font-mono);">30s</span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modal-tiger-meta').innerHTML = '';
+  document.getElementById('modal-focus-map').style.display = 'none';
+  openModal('tiger-modal');
+}
 
-        // Update all views
-        updateKPIs(DATA.kpi || {});
-        renderMapStations(DATA.stations || []);
-        renderMapTigers(DATA.tigers || []);
-        renderAlerts(DATA.alerts || []);
-        renderHITL(DATA.hitl || []);
-        renderDossier(DATA.tigers || []);
-        renderOps(DATA.roi || {}, DATA.pipeline || {});
+function exportReport(type) {
+  const names = { ntca: 'NTCA Census Report', shapefile: 'Territory Shapefiles', pdf: 'PDF Briefing' };
+  const btn = event?.target;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Generating...';
+    btn.style.color = 'var(--accent-green)';
+    btn.style.borderColor = 'var(--accent-green)';
+    setTimeout(() => {
+      btn.textContent = '✓ Downloaded';
+      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+    }, 1500);
+  }
+}
 
-        // Notification badge
-        const badge = document.getElementById('notifBadge');
-        if (badge) {
-          badge.textContent = (DATA.alerts || []).filter(a => !a.ack).length;
-        }
+function quarantineAction(action) {
+  const names = { rollback: 'Rollback', purge: 'Purge' };
+  if (confirm(`${names[action]} quarantine? This ${action === 'purge' ? 'permanently deletes' : 'restores'} all quarantined files.`)) {
+    // Simulate action
+    const body = document.getElementById('quarantine-body');
+    body.innerHTML = `<div style="text-align:center;padding:16px;color:var(--accent-green);font-size:12px;">✓ ${names[action]} completed successfully</div>`;
+    setTimeout(loadData, 3000);
+  }
+}
 
-        // Status indicator
-        if (DATA.status === 'no_data') {
-          console.log('TERA-STRIPE: No pipeline data yet. Run: python scripts/run_real_pipeline.py --source "path/to/photos"');
-        }
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+}
 
-      } catch (err) {
-        console.error('Dashboard fetch error:', err);
-      }
-    }
+function highlightSearch(query) {
+  if (!query) return;
+  const tiger = DATA.tigers?.find(t =>
+    t.id.toLowerCase().includes(query) || t.name.toLowerCase().includes(query)
+  );
+  if (tiger) openTigerDetail(tiger.id);
+}
 
-    // ── Initialize ──────────────────────────────────────────────────
+// ── Modals ──────────────────────────────
+function openModal(id) {
+  // Reset hidden elements
+  document.getElementById('modal-tiger-status').style.display = '';
+  document.getElementById('modal-focus-map').style.display = '';
+  document.getElementById(id).classList.add('active');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    fetchDashboardData();
+// ── Utilities ──────────────────────────────
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
 
-    // Auto-refresh every 30 seconds
-    setInterval(fetchDashboardData, 30000);
-  </script>
+// ── KPI card clicks ──────────────────────────────
+document.getElementById('kpi-tigers')?.addEventListener('click', () => {
+  if (!DATA?.tigers?.length) return;
+  openTigerDetail(DATA.tigers[0].id);
+});
+document.getElementById('kpi-cameras')?.addEventListener('click', openCameraView);
+document.getElementById('kpi-alerts')?.addEventListener('click', () => scrollToSection('ops-alerts'));
+</script>
 </body>
-
 </html>

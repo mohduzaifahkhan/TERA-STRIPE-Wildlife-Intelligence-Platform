@@ -1,5 +1,5 @@
 """
-TERA-STRIPE Dashboard -- Tactical Wildlife Intelligence Console
+TERA-STRIPE Dashboard -- Tiger Stripe Intelligence Console
 =================================================================
 Data-driven dashboard server that pulls live data from the SQLite
 database (M7), pipeline result files, and the Pench station registry.
@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import glob
+import re
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
@@ -172,7 +173,7 @@ def _get_tigers() -> list[dict]:
                 if sid and sid not in station_visits[tid]:
                     station_visits[tid].append(sid)
 
-            # Bulk query: crop paths per tiger
+            # Bulk query: crop paths per tiger — scan ALL crop subdirectories
             all_sightings = session.query(
                 TigerSighting.tiger_id,
                 TigerSighting.flank_crop_path
@@ -185,11 +186,16 @@ def _get_tigers() -> list[dict]:
                     tiger_crops[tid] = {"left": None, "right": None}
                 if crop_path:
                     crop_file = Path(crop_path).name
-                    if (CROPS_DIR / crop_file).exists():
+                    # Check in all pipeline_* subdirs
+                    found_path = _find_crop_file(crop_file)
+                    if found_path:
                         if "LEFT" in crop_file and not tiger_crops[tid]["left"]:
                             tiger_crops[tid]["left"] = f"/api/crops/{crop_file}"
                         elif "RIGHT" in crop_file and not tiger_crops[tid]["right"]:
                             tiger_crops[tid]["right"] = f"/api/crops/{crop_file}"
+                        elif "AMBIGUOUS" in crop_file:
+                            if not tiger_crops[tid]["left"]:
+                                tiger_crops[tid]["left"] = f"/api/crops/{crop_file}"
 
             tigers = []
             for t in all_tigers:
@@ -210,6 +216,21 @@ def _get_tigers() -> list[dict]:
             return tigers
     except Exception:
         return []
+
+
+def _find_crop_file(filename: str) -> Path | None:
+    """Find a crop file in any pipeline subdirectory."""
+    # Direct check
+    direct = CROPS_DIR / filename
+    if direct.exists():
+        return direct
+    # Search subdirectories
+    for subdir in CROPS_DIR.iterdir():
+        if subdir.is_dir():
+            candidate = subdir / filename
+            if candidate.exists():
+                return candidate
+    return None
 
 
 def _get_alerts() -> list[dict]:
@@ -390,6 +411,133 @@ def _get_recent_sightings(limit: int = 50) -> list[dict]:
         return []
 
 
+def _get_reid_results() -> dict:
+    """Compute Re-ID matching results from embeddings."""
+    try:
+        import numpy as np
+        embeddings_path = RESULTS_DIR / "embeddings.npy"
+        meta_path = RESULTS_DIR / "embedding_results.json"
+
+        if not embeddings_path.exists() or not meta_path.exists():
+            return {"matches": [], "gallery_size": 0, "total_embeddings": 0}
+
+        emb = np.load(str(embeddings_path))
+        meta = _load_json(meta_path)
+        if meta is None:
+            return {"matches": [], "gallery_size": 0, "total_embeddings": 0}
+
+        n = len(meta)
+        tiger_pattern = re.compile(r"(PTR_T_\d{3})")
+
+        # Group by tiger
+        tiger_groups = {}
+        for i, m in enumerate(meta):
+            match = tiger_pattern.search(m.get("image_name", ""))
+            tid = match.group(1) if match else f"UNK_{i}"
+            if tid not in tiger_groups:
+                tiger_groups[tid] = []
+            tiger_groups[tid].append(i)
+
+        # Compute cosine similarities for representative pairs
+        from numpy.linalg import norm
+        def cosine_sim(a, b):
+            na, nb = norm(a), norm(b)
+            if na == 0 or nb == 0:
+                return 0.0
+            return float(np.dot(a, b) / (na * nb))
+
+        matches = []
+
+        # 1. Same-tiger matches (AUTO_MATCH examples)
+        for tid, indices in tiger_groups.items():
+            if len(indices) >= 2:
+                i, j = indices[0], indices[1]
+                sim = cosine_sim(emb[i], emb[j])
+                crop_i = Path(meta[i].get("crop_path", "")).name
+                crop_j = Path(meta[j].get("crop_path", "")).name
+                decision = "AUTO_MATCH" if sim >= 0.35 else "REVIEW" if sim >= 0.20 else "NEW_INDIVIDUAL"
+                matches.append({
+                    "query_id": meta[i].get("image_name", ""),
+                    "gallery_id": meta[j].get("image_name", ""),
+                    "query_tiger": tid,
+                    "gallery_tiger": tid,
+                    "query_crop": f"/api/crops/{crop_i}" if crop_i else None,
+                    "gallery_crop": f"/api/crops/{crop_j}" if crop_j else None,
+                    "similarity": round(sim, 4),
+                    "decision": decision,
+                    "flank": meta[i].get("flank_side", "UNKNOWN"),
+                })
+
+        # 2. Cross-tiger comparisons (should be low similarity)
+        tiger_ids = list(tiger_groups.keys())
+        for k in range(min(6, len(tiger_ids) - 1)):
+            tid_a = tiger_ids[k]
+            tid_b = tiger_ids[k + 1]
+            i = tiger_groups[tid_a][0]
+            j = tiger_groups[tid_b][0]
+            sim = cosine_sim(emb[i], emb[j])
+            crop_i = Path(meta[i].get("crop_path", "")).name
+            crop_j = Path(meta[j].get("crop_path", "")).name
+            decision = "AUTO_MATCH" if sim >= 0.35 else "REVIEW" if sim >= 0.20 else "NEW_INDIVIDUAL"
+            matches.append({
+                "query_id": meta[i].get("image_name", ""),
+                "gallery_id": meta[j].get("image_name", ""),
+                "query_tiger": tid_a,
+                "gallery_tiger": tid_b,
+                "query_crop": f"/api/crops/{crop_i}" if crop_i else None,
+                "gallery_crop": f"/api/crops/{crop_j}" if crop_j else None,
+                "similarity": round(sim, 4),
+                "decision": decision,
+                "flank": meta[i].get("flank_side", "UNKNOWN"),
+            })
+
+        # Sort: highest similarity first
+        matches.sort(key=lambda x: x["similarity"], reverse=True)
+
+        # Compute stats
+        auto_matches = sum(1 for m in matches if m["decision"] == "AUTO_MATCH")
+        reviews = sum(1 for m in matches if m["decision"] == "REVIEW")
+        new_individuals = sum(1 for m in matches if m["decision"] == "NEW_INDIVIDUAL")
+
+        return {
+            "matches": matches,
+            "gallery_size": len(tiger_groups),
+            "total_embeddings": n,
+            "embedding_dim": emb.shape[1] if len(emb.shape) > 1 else 0,
+            "auto_match_count": auto_matches,
+            "review_count": reviews,
+            "new_individual_count": new_individuals,
+            "model": "DINOv2 ViT-B/14",
+        }
+
+    except Exception as e:
+        return {"matches": [], "gallery_size": 0, "total_embeddings": 0, "error": str(e)}
+
+
+def _get_quarantine_stats() -> dict:
+    """Get quarantine statistics."""
+    triage = _load_json(RESULTS_DIR / "triage_results.json")
+    blanks = 0
+    if triage:
+        blanks = sum(1 for t in triage if t.get("label") == "BLANK")
+
+    quarantine_dir = DATA_DIR / "quarantine"
+    quarantined_files = 0
+    total_size_bytes = 0
+    if quarantine_dir.exists():
+        for f in quarantine_dir.rglob("*"):
+            if f.is_file():
+                quarantined_files += 1
+                total_size_bytes += f.stat().st_size
+
+    return {
+        "blanks_filtered": blanks,
+        "quarantined_files": quarantined_files,
+        "total_size_mb": round(total_size_bytes / (1024 * 1024), 2),
+        "storage_saved_gb": round((blanks * 4.5) / 1024, 1) if blanks else 0,
+    }
+
+
 def _build_full_feed() -> dict:
     """Build the complete dashboard data feed from real sources."""
     db = _get_db()
@@ -399,6 +547,8 @@ def _build_full_feed() -> dict:
     pipeline = _get_pipeline_stats()
     zones = _get_zones(stations, tigers)
     sightings = _get_recent_sightings(limit=50)
+    reid = _get_reid_results()
+    quarantine = _get_quarantine_stats()
 
     # Get DB summary
     db_summary = {}
@@ -485,6 +635,8 @@ def _build_full_feed() -> dict:
         "pipeline": pipeline,
         "zones": zones,
         "sightings": sightings,
+        "reid": reid,
+        "quarantine": quarantine,
         "db_summary": db_summary,
     }
 
@@ -521,6 +673,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             params = parse_qs(parsed.query)
             limit = int(params.get("limit", ["50"])[0])
             self._serve_json({"sightings": _get_recent_sightings(limit)})
+        elif parsed.path == "/api/reid":
+            self._serve_json(_get_reid_results())
+        elif parsed.path == "/api/quarantine":
+            self._serve_json(_get_quarantine_stats())
         elif parsed.path.startswith("/api/tiger/"):
             tiger_id = parsed.path.split("/api/tiger/")[1]
             tigers = _get_tigers()
@@ -538,10 +694,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             else:
                 self.send_error(404, "Station not found")
         elif parsed.path.startswith("/api/crops/"):
-            # Serve crop images from data/real_results/crops/
+            # Serve crop images from data/real_results/crops/ and subdirectories
             filename = Path(parsed.path.split("/")[-1]).name
-            crop_path = CROPS_DIR / filename
-            if crop_path.exists() and crop_path.is_file():
+            crop_path = _find_crop_file(filename)
+            if crop_path and crop_path.exists():
                 self._serve_file(crop_path, "image/jpeg")
             else:
                 self.send_error(404)
@@ -642,7 +798,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 def main():
     port = int(os.environ.get("DASHBOARD_PORT", "8501"))
     server = HTTPServer(("0.0.0.0", port), DashboardHandler)
-    print(f"\n  TERA-STRIPE Tactical Console")
+    print(f"\n  TERA-STRIPE Tiger Stripe Intelligence Console")
     print(f"  http://localhost:{port}")
     print(f"  Database: {DB_PATH}")
     print(f"  Results:  {RESULTS_DIR}")
